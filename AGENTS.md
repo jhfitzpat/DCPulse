@@ -7,7 +7,7 @@ Machine-readable map for navigation and tooling. **Source of truth is the code**
 | What | Where |
 |------|--------|
 | CLI / pipeline | [`src/main.py`](src/main.py) — `python -m src.main` |
-| Config | [`src/config.py`](src/config.py) — env vars `DC_PULSE_*`, `OPENAI_*` |
+| Config | [`src/config.py`](src/config.py) — `load_config()` loads repo `.env` with **override**; env vars `DC_PULSE_*`, `OPENAI_*` |
 | Env template | [`.env.example`](.env.example) |
 
 ## Data flow (short)
@@ -50,7 +50,7 @@ DCPulse/
 │   ├── topic_exclusions.yml # Keyword / topic filters
 │   └── weekly_usage.json    # Featured primary URLs (week-to-week uniqueness)
 ├── tests/                   # pytest
-├── scripts/                 # VM setup, run-weekly, systemd, deploy
+├── scripts/                 # setup-vm.sh, run-weekly.sh, systemd, deploy-update.ps1 / .sh
 ├── .github/workflows/       # Manual workflow; VM is primary scheduler
 ├── .cursor/rules/           # Cursor project rules (*.mdc)
 ├── pyproject.toml
@@ -75,7 +75,13 @@ DCPulse/
 python -m pytest
 ```
 
+(Use the project venv’s `python` if dependencies are not installed globally.)
+
 Files: `tests/test_*.py` — schema, render, web_search, usage_history, openai_web_search parse.
+
+## Deploy (PC → VM)
+
+Git mode: push `master` (or your branch) to `origin`, then [`scripts/deploy-update.ps1`](scripts/deploy-update.ps1) or [`scripts/deploy-update.sh`](scripts/deploy-update.sh) with `DC_PULSE_VM_HOST` and `DC_PULSE_VM_PATH` (or `-VmHost` / `-RemotePath` on PowerShell). Requires a **git** checkout on the VM.
 
 ## Generated / local-only (usually gitignored)
 

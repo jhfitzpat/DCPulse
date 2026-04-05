@@ -4,6 +4,11 @@
 
 When the pipeline includes **web search** hits (OpenAI `web_search` tool), treat them like other articles: prefer credible URLs, and do **not** treat search snippets as proof of broader media coverage. LinkedIn hits are often **incomplete** (index-only).
 
+## DC consulting lens
+
+- Prioritize topics that matter to **Canadian DC sponsors and committees**: governance, defaults, member outcomes, decumulation, fees, communications, recordkeeping, and implementation.
+- Exclude or sharply down-rank DB-only, retail-investor, personal-finance, or US-only stories unless their relevance to Canadian DC plans is explicit.
+
 ## Source quality bar
 
 Prefer and cite:
@@ -20,6 +25,7 @@ Prefer and cite:
 - Show **momentum**: multiple outlets, repeated committee-level concerns, or a regulatory/consulting consensus forming.
 - Call out **what is uncertain** or still evolving (consultants must not overclaim).
 - Suggest **what to read next**: 3–5 example headlines or **source types** (not invented paywalled titles) to deepen diligence.
+- Translate each topic into **what a sponsor or committee may need to monitor, decide, or ask next**.
 
 ## Anti-patterns
 

@@ -28,7 +28,9 @@ Put your key in either place (the app loads the repo-root **`.env`** automatical
 
 - Without `OPENAI_API_KEY`, the run uses **fallback** placeholder copy (clusters and citations still appear if feeds work).
 - `--print` prints the text digest and skips email.
-- `--dry-run` skips SMTP even if configured.
+- `--dry-run` sets `DC_PULSE_DRY_RUN=1` and skips SMTP even if configured.
+
+**`.env` precedence:** `load_config()` reads the repo-root `.env` with **override enabled**, so values in `.env` replace the same variables already set in the process environment. Use that to fix “empty `export` in the shell blocked my SMTP settings” issues on servers.
 
 ## Production: Debian VM (scheduled runs)
 
@@ -51,11 +53,28 @@ The weekly digest runs on a **Debian VM** (e.g. Proxmox) via **cron** or **syste
 
    Do not commit `.env`.
 
-4. **Test**: `./.venv/bin/python -m src.main --print --dry-run`, then a real send if SMTP is configured.
+4. **Test**: use the **project virtualenv** (dependencies are not installed for system `python3`):
+
+   ```bash
+   ./.venv/bin/python -m src.main --print --dry-run
+   ```
+
+   Then a real send (ensure `DC_PULSE_DRY_RUN=0` or unset in `.env`, and SMTP vars set):
+
+   ```bash
+   ./.venv/bin/python -m src.main
+   ```
 
 5. **Schedule** (pick one):
 
-   **Cron (Monday 12:00 UTC, same as the old Actions schedule)**
+   **Cron (Monday 08:00 America/Los_Angeles — example)**
+
+   ```cron
+   CRON_TZ=America/Los_Angeles
+   0 8 * * 1 /home/YOU/DCPulse/scripts/run-weekly.sh
+   ```
+
+   **Cron (Monday 12:00 UTC — legacy Actions-style)**
 
    ```cron
    CRON_TZ=UTC
@@ -78,18 +97,28 @@ The weekly digest runs on a **Debian VM** (e.g. Proxmox) via **cron** or **syste
 
 6. **Logs and digest archive**: [`scripts/run-weekly.sh`](scripts/run-weekly.sh) appends to `logs/dc-pulse.log` and copies `last_digest.txt` to `archive/YYYY-MM-DD.txt`. Override with `DC_PULSE_LOG_DIR`, `DC_PULSE_ARCHIVE_DIR`, or `DC_PULSE_LOG_FILE` if needed.
 
+### Email troubleshooting
+
+- **`DC_PULSE_DRY_RUN`:** only `1`, `true`, `yes`, and `on` (case-insensitive) enable dry-run. **`0` does not** enable dry-run; email is allowed when SMTP and recipients are set.
+- **Port 587 vs 465:** port **587** uses STARTTLS (`DC_PULSE_SMTP_TLS=1`). Port **465** uses implicit SSL (`SMTP_SSL`); the app defaults to SSL when the port is 465 unless `DC_PULSE_SMTP_SSL=0`.
+- **Logs:** a successful send logs `Email sent successfully`; failures log `SMTP send failed` with a traceback. Cron output goes to `logs/dc-pulse.log` when using `run-weekly.sh`.
+
 ### Manual deploy from your PC to the VM
 
 After editing prompts, `data/`, `src/`, or `requirements.txt`, refresh the VM without editing files only on the server:
 
-- **PowerShell** (git mode: push to GitHub first, then pull on the VM):
+- **PowerShell** (git mode: **commit and push to GitHub first**, then pull on the VM):
 
   ```powershell
+  .\scripts\deploy-update.ps1 -VmHost vm.example.com -RemotePath /home/you/DCPulse
+  # or use env vars:
   $env:DC_PULSE_VM_HOST = "vm.example.com"
   $env:DC_PULSE_VM_PATH = "/home/you/DCPulse"
   $env:DC_PULSE_SSH_USER = "you"   # optional
   .\scripts\deploy-update.ps1
   ```
+
+  The VM checkout must be a **git clone** (with `.git`) so `git pull` works; a one-time `git init` + remote + `master` checkout is fine if the tree was copied without history.
 
 - **Git Bash / WSL** (same env vars, or pass via `export`):
 
@@ -129,7 +158,9 @@ If email secrets are missing, the job still runs and writes `last_digest.txt`; d
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `DC_PULSE_DRY_RUN` | `0` | `1` = no email send. |
+| `DC_PULSE_DRY_RUN` | unset / `0` | `1`/`true`/`yes`/`on` = no email send. Plain `0` is not dry-run. |
+| `DC_PULSE_USAGE_HISTORY` | `1` | `0` = do not track or block repeat primary URLs across weeks. |
+| `DC_PULSE_USAGE_HISTORY_WEEKS` | `12` | Rolling window (ISO weeks) for blocked primary URLs. |
 | `DC_PULSE_LOG_LEVEL` | `INFO` | Logging level. |
 | `DC_PULSE_LOOKBACK_DAYS` | `14` | RSS item lookback. |
 | `DC_PULSE_MAX_TOPICS` | `7` | Max ranked topics. |

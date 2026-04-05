@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import List
+from typing import Any, Dict, List, Optional
 
 from openai import OpenAI
 
@@ -35,27 +35,76 @@ def build_article_draft_system_prompt(cfg: Config) -> str:
     return "\n\n".join(p for p in parts if p.strip())
 
 
+def _supporting_articles_payload(sc: Optional[ScoredCluster]) -> List[Dict[str, Any]]:
+    if sc is None:
+        return []
+    articles: List[Dict[str, Any]] = []
+    for n in sc.cluster.articles[:5]:
+        pub = n.raw.published
+        articles.append(
+            {
+                "title": n.raw.title,
+                "url": n.raw.link,
+                "source_name": n.raw.source_name,
+                "source_category": n.raw.source_category,
+                "published": pub.isoformat() if pub else None,
+                "summary_excerpt": (n.raw.summary or "")[:800],
+            }
+        )
+    return articles
+
+
+def _topic_context_payload(
+    digest: WeeklyDigest,
+    top_scored: List[ScoredCluster],
+) -> List[Dict[str, Any]]:
+    topic_payloads: List[Dict[str, Any]] = []
+    for idx, topic in enumerate(digest.topics):
+        cluster_idx = topic.rank - 1 if 0 < topic.rank <= len(top_scored) else idx
+        sc = top_scored[cluster_idx] if 0 <= cluster_idx < len(top_scored) else None
+        citations = [
+            {
+                "title": c.title,
+                "url": c.url,
+                "publisher": c.publisher,
+                "published_date": c.published_date,
+            }
+            for c in topic.citations
+        ]
+        topic_payloads.append(
+            {
+                "rank": topic.rank,
+                "topic_title": topic.topic_title,
+                "trend_summary": topic.trend_summary,
+                "why_matters_dc": topic.why_matters_dc,
+                "evidence_momentum": topic.evidence_momentum,
+                "best_use": topic.best_use.value,
+                "suggested_repost_copy": topic.suggested_repost_copy,
+                "suggested_original_angle": topic.suggested_original_angle,
+                "example_headlines_or_sources": topic.example_headlines_or_sources,
+                "citations": citations,
+                "cluster_context": {
+                    "cluster_id": sc.cluster.id if sc else None,
+                    "cluster_label": sc.cluster.label if sc else None,
+                    "rank_score": round(sc.score, 3) if sc else None,
+                    "rank_reasons": sc.reasons if sc else None,
+                    "supporting_articles": _supporting_articles_payload(sc),
+                },
+            }
+        )
+    return topic_payloads
+
+
 def build_article_draft_user_message(
     cfg: Config,
     digest: WeeklyDigest,
     top_scored: List[ScoredCluster],
 ) -> str:
-    cluster_labels = [{"cluster_id": s.cluster.id, "label": s.cluster.label} for s in top_scored]
     payload = {
         "week_label": digest.week_label,
         "target_drafts": cfg.article_draft_count,
         "target_words_per_draft": cfg.article_draft_target_words,
-        "topics": [
-            {
-                "rank": t.rank,
-                "topic_title": t.topic_title,
-                "trend_summary": t.trend_summary,
-                "best_use": t.best_use.value,
-                "suggested_original_angle": t.suggested_original_angle,
-            }
-            for t in digest.topics
-        ],
-        "cluster_labels": cluster_labels,
+        "topics": _topic_context_payload(digest, top_scored),
         "best_thought_leadership_month": digest.best_thought_leadership_month,
         "json_schema": {
             "article_drafts": [
