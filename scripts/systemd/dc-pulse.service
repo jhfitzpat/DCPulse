@@ -1,0 +1,17 @@
+[Unit]
+Description=DC Pulse weekly digest pipeline
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=CHANGE_ME
+WorkingDirectory=CHANGE_ME_REPO_ROOT
+EnvironmentFile=CHANGE_ME_REPO_ROOT/.env
+ExecStart=/bin/bash CHANGE_ME_REPO_ROOT/scripts/run-weekly.sh
+StandardOutput=journal
+StandardError=journal
+
+# Hardening (optional; adjust if your layout differs)
+NoNewPrivileges=true
+PrivateTmp=true

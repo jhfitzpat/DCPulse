@@ -3,9 +3,7 @@
 name: Weekly DC Pulse
 
 on:
-  schedule:
-    # Monday 12:00 UTC (~early morning ET); adjust as needed
-    - cron: "0 12 * * 1"
+  # Scheduled runs moved to Debian VM (cron/systemd). Manual run only here.
   workflow_dispatch: {}
 
 concurrency:

@@ -1,0 +1,2 @@
+# Shell scripts run on Linux/VM; enforce LF so shebang lines work.
+*.sh text eol=lf

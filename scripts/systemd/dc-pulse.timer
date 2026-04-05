@@ -1,0 +1,10 @@
+[Unit]
+Description=Run DC Pulse weekly (Monday 12:00 UTC, matches former GitHub Actions schedule)
+
+[Timer]
+OnCalendar=Mon *-*-* 12:00:00 UTC
+Persistent=true
+Unit=dc-pulse.service
+
+[Install]
+WantedBy=timers.target
