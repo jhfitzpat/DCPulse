@@ -1,0 +1,15 @@
+# Keywords or phrases that de-prioritize or filter noisy clusters (case-insensitive).
+# Optional: list of regex patterns as strings (simple substring match if no regex delimiters).
+
+exclude_keywords:
+  - "lottery"
+  - "celebrity"
+  - "crypto scam"
+
+# Stronger down-ranking for topics that match these (DC relevance filter).
+low_relevance_keywords:
+  - "us-only"
+  - "401(k)"
+
+# Optional explicit topic titles to skip if seen in cluster label (substring).
+skip_topic_substrings: []

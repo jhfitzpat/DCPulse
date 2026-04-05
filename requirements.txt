@@ -1,0 +1,7 @@
+# DC Pulse Weekly Pipeline
+feedparser>=6.0.11
+httpx>=0.27.0
+pyyaml>=6.0.1
+pydantic>=2.6.0
+openai>=1.40.0
+python-dateutil>=2.9.0

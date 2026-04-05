@@ -1,0 +1,40 @@
+# Curated RSS feeds for Canadian pension, benefits, and retirement coverage.
+# Add or disable entries; weight boosts ranking when multiple articles hit the same topic.
+# Replace placeholder feeds with live URLs where needed.
+
+sources:
+  - id: benefits_canada
+    name: Benefits Canada
+    feed_url: https://www.benefitscanada.com/feed/
+    category: media
+    weight: 1.2
+    enabled: true
+
+  - id: investment_executive
+    name: Investment Executive
+    feed_url: https://www.investmentexecutive.com/feed/
+    category: media
+    weight: 1.1
+    enabled: true
+
+  # Replace feed_url when OSFI publishes a stable RSS endpoint (previous URL returned 404).
+  - id: osfi
+    name: OSFI News
+    feed_url: https://www.osfi-bsif.gc.ca/Eng/feeds/osfi-news.xml
+    category: regulator
+    weight: 1.5
+    enabled: false
+
+  - id: canadian_investment_review
+    name: Canadian Investment Review (sample — verify feed URL)
+    feed_url: https://www.canadianinvestmentreview.com/feed/
+    category: media
+    weight: 1.0
+    enabled: false
+
+  - id: globe_investing
+    name: Globe and Mail Investing (RSS hub — verify)
+    feed_url: https://www.theglobeandmail.com/investing/?service=rss
+    category: media
+    weight: 1.0
+    enabled: false
