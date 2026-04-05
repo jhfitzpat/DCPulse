@@ -120,7 +120,8 @@ Workflow: [`.github/workflows/weekly-dc-pulse.yml`](.github/workflows/weekly-dc-
 | `DC_PULSE_SMTP_PORT` | Port (e.g. `587`). |
 | `DC_PULSE_SMTP_USER` | SMTP auth user if required. |
 | `DC_PULSE_SMTP_PASSWORD` | SMTP password or app password. |
-| `DC_PULSE_SMTP_TLS` | `1` for STARTTLS (default in app). |
+| `DC_PULSE_SMTP_TLS` | `1` for STARTTLS on submission port (e.g. 587). Not used when using implicit SSL on 465. |
+| `DC_PULSE_SMTP_SSL` | Optional. Implicit SSL (`SMTP_SSL`); if omitted, defaults **on** when port is `465`. Set `0` to disable. |
 
 If email secrets are missing, the job still runs and writes `last_digest.txt`; download the **last-digest** artifact from the workflow run.
 
@@ -145,6 +146,7 @@ If email secrets are missing, the job still runs and writes `last_digest.txt`; d
 | `DC_PULSE_ARTICLE_DRAFT_WORDS` | `900` | Target length hint per draft. |
 | `DC_PULSE_ARTICLE_DRAFT_TIMEOUT` | `300` | Seconds for draft LLM call. |
 | `DC_PULSE_ARTICLE_DRAFT_MODEL` | (main model) | Model for article drafts. |
+| `DC_PULSE_SMTP_SSL` | (auto) | Implicit SSL for SMTPS (port **465** by default). Set `0`/`1` to override auto-detection. |
 
 See [`.env.example`](.env.example) for planner/search limits (`DC_PULSE_SEARCH_*`, `DC_PULSE_WEB_SEARCH_MODEL`).
 

@@ -206,10 +206,26 @@ def send_digest_email(cfg: Config, subject: str, text_body: str, html_body: str)
     msg["To"] = ", ".join(recipients)
     msg.attach(MIMEText(text_body, "plain", "utf-8"))
     msg.attach(MIMEText(html_body, "html", "utf-8"))
-    log.info("Sending email to %s via %s:%s", recipients, cfg.smtp_host, cfg.smtp_port)
-    with smtplib.SMTP(cfg.smtp_host, cfg.smtp_port, timeout=60) as smtp:
-        if cfg.smtp_use_tls:
-            smtp.starttls()
-        if cfg.smtp_user and cfg.smtp_password:
-            smtp.login(cfg.smtp_user, cfg.smtp_password)
-        smtp.sendmail(msg["From"], recipients, msg.as_string())
+    log.info(
+        "Sending email to %s via %s:%s (smtp_ssl=%s, starttls=%s)",
+        recipients,
+        cfg.smtp_host,
+        cfg.smtp_port,
+        cfg.smtp_use_ssl,
+        False if cfg.smtp_use_ssl else cfg.smtp_use_tls,
+    )
+    try:
+        if cfg.smtp_use_ssl:
+            smtp_cm = smtplib.SMTP_SSL(cfg.smtp_host, cfg.smtp_port, timeout=60)
+        else:
+            smtp_cm = smtplib.SMTP(cfg.smtp_host, cfg.smtp_port, timeout=60)
+        with smtp_cm as smtp:
+            if not cfg.smtp_use_ssl and cfg.smtp_use_tls:
+                smtp.starttls()
+            if cfg.smtp_user and cfg.smtp_password:
+                smtp.login(cfg.smtp_user, cfg.smtp_password)
+            smtp.sendmail(msg["From"], recipients, msg.as_string())
+    except Exception:
+        log.exception("SMTP send failed")
+        raise
+    log.info("Email sent successfully to %d recipient(s)", len(recipients))

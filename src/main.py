@@ -186,6 +186,20 @@ def main() -> int:
 
     digest = run_pipeline()
     cfg = load_config()
+    log = logging.getLogger("dc_pulse")
+    if cfg.dry_run:
+        log.info("Email: dry_run enabled (DC_PULSE_DRY_RUN or --dry-run); send will be skipped")
+    elif not cfg.email_to or not cfg.smtp_host:
+        log.warning(
+            "Email: not configured (set DC_PULSE_EMAIL_TO and DC_PULSE_SMTP_HOST in .env); send will be skipped"
+        )
+    else:
+        log.info(
+            "Email: will attempt send via %s:%s (smtp_ssl=%s)",
+            cfg.smtp_host,
+            cfg.smtp_port,
+            cfg.smtp_use_ssl,
+        )
     text = render_text(digest)
     html = render_html(digest)
 

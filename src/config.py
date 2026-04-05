@@ -58,6 +58,7 @@ class Config:
     smtp_user: Optional[str]
     smtp_password: Optional[str]
     smtp_use_tls: bool
+    smtp_use_ssl: bool
     email_subject_prefix: str
     # Web search (optional; OpenAI Responses API + web_search tool)
     web_search_enabled: bool
@@ -93,6 +94,12 @@ class Config:
         planner_model = (os.environ.get("DC_PULSE_SEARCH_PLANNER_MODEL") or "").strip()
         deep_model = (os.environ.get("DC_PULSE_DEEP_RESEARCH_MODEL") or "").strip()
         draft_model = (os.environ.get("DC_PULSE_ARTICLE_DRAFT_MODEL") or "").strip()
+        smtp_port = _env_int("DC_PULSE_SMTP_PORT", 587)
+        smtp_ssl_raw = (os.environ.get("DC_PULSE_SMTP_SSL") or "").strip()
+        if smtp_ssl_raw:
+            smtp_use_ssl = _env_bool("DC_PULSE_SMTP_SSL", False)
+        else:
+            smtp_use_ssl = smtp_port == 465
         return cls(
             dry_run=_env_bool("DC_PULSE_DRY_RUN", False),
             log_level=os.environ.get("DC_PULSE_LOG_LEVEL", "INFO").upper(),
@@ -106,10 +113,11 @@ class Config:
             email_to=os.environ.get("DC_PULSE_EMAIL_TO") or None,
             email_from=os.environ.get("DC_PULSE_EMAIL_FROM") or None,
             smtp_host=os.environ.get("DC_PULSE_SMTP_HOST") or None,
-            smtp_port=_env_int("DC_PULSE_SMTP_PORT", 587),
+            smtp_port=smtp_port,
             smtp_user=os.environ.get("DC_PULSE_SMTP_USER") or None,
             smtp_password=os.environ.get("DC_PULSE_SMTP_PASSWORD") or None,
             smtp_use_tls=_env_bool("DC_PULSE_SMTP_TLS", True),
+            smtp_use_ssl=smtp_use_ssl,
             email_subject_prefix=os.environ.get("DC_PULSE_EMAIL_SUBJECT_PREFIX", "DC Pulse Weekly"),
             web_search_enabled=_env_bool("DC_PULSE_WEB_SEARCH", False),
             web_search_responses_model=ws_model or "gpt-4o",
@@ -142,7 +150,8 @@ def load_config() -> Config:
     try:
         from dotenv import load_dotenv
 
-        load_dotenv(REPO_ROOT / ".env")
+        # Override existing env vars so repo `.env` wins (fixes empty shell exports blocking SMTP keys).
+        load_dotenv(REPO_ROOT / ".env", override=True)
     except ImportError:
         pass
     return Config.from_env()
