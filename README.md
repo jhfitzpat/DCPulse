@@ -15,9 +15,18 @@ cd /path/to/DCPulse
 python -m venv .venv
 .venv\Scripts\activate   # Windows
 pip install -r requirements.txt
-copy .env.example .env    # optional
+copy .env.example .env    # optional; then edit .env and set OPENAI_API_KEY
 python -m src.main --print --dry-run
 ```
+
+### OpenAI API key (local)
+
+Put your key in either place (the app loads the repo-root **`.env`** automatically if `python-dotenv` is installed):
+
+1. **`.env`** in the project root (recommended): copy [`.env.example`](.env.example) to `.env` and set `OPENAI_API_KEY=sk-...`. `.env` is gitignored.
+2. **Environment variable**: set `OPENAI_API_KEY` in your shell or system environment (same name the OpenAI SDK uses).
+
+For **GitHub Actions**, add repository secret **`OPENAI_API_KEY`** (see table below)—do not commit keys to the repo.
 
 - Without `OPENAI_API_KEY`, the run uses **fallback** placeholder copy (clusters and citations still appear if feeds work).
 - `--print` prints the text digest and skips email.

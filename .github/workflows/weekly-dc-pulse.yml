@@ -1,4 +1,5 @@
 # Weekly DC Pulse digest: collect RSS, cluster/rank topics, optional OpenAI narrative, email.
+# Manual run: Actions tab -> Weekly DC Pulse -> Run workflow.
 name: Weekly DC Pulse
 
 on:

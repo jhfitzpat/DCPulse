@@ -97,4 +97,11 @@ class Config:
 
 
 def load_config() -> Config:
+    """Load optional `.env` from repo root so local OPENAI_API_KEY etc. work without exporting."""
+    try:
+        from dotenv import load_dotenv
+
+        load_dotenv(REPO_ROOT / ".env")
+    except ImportError:
+        pass
     return Config.from_env()
