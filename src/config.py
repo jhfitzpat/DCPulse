@@ -59,6 +59,25 @@ class Config:
     smtp_password: Optional[str]
     smtp_use_tls: bool
     email_subject_prefix: str
+    # Web search (optional; OpenAI Responses API + web_search tool)
+    web_search_enabled: bool
+    web_search_responses_model: str
+    search_planner_model: str
+    search_max_queries: int
+    search_results_per_query: int
+    # Deep research digest LLM (seven-topic pass)
+    deep_research_enabled: bool
+    deep_research_model: str
+    # Long-form article drafts
+    article_drafts_enabled: bool
+    article_draft_count: int
+    article_draft_target_words: int
+    article_draft_timeout_seconds: float
+    article_draft_model: str
+    # Week-to-week primary URL usage (rolling window)
+    usage_history_enabled: bool
+    usage_history_weeks: int
+    usage_history_path: Path
     # Paths
     data_dir: Path
     sources_path: Path
@@ -70,6 +89,10 @@ class Config:
     def from_env(cls) -> Config:
         root = REPO_ROOT
         data_dir = Path(os.environ.get("DC_PULSE_DATA_DIR", str(root / "data")))
+        ws_model = (os.environ.get("DC_PULSE_WEB_SEARCH_MODEL") or "").strip()
+        planner_model = (os.environ.get("DC_PULSE_SEARCH_PLANNER_MODEL") or "").strip()
+        deep_model = (os.environ.get("DC_PULSE_DEEP_RESEARCH_MODEL") or "").strip()
+        draft_model = (os.environ.get("DC_PULSE_ARTICLE_DRAFT_MODEL") or "").strip()
         return cls(
             dry_run=_env_bool("DC_PULSE_DRY_RUN", False),
             log_level=os.environ.get("DC_PULSE_LOG_LEVEL", "INFO").upper(),
@@ -88,6 +111,24 @@ class Config:
             smtp_password=os.environ.get("DC_PULSE_SMTP_PASSWORD") or None,
             smtp_use_tls=_env_bool("DC_PULSE_SMTP_TLS", True),
             email_subject_prefix=os.environ.get("DC_PULSE_EMAIL_SUBJECT_PREFIX", "DC Pulse Weekly"),
+            web_search_enabled=_env_bool("DC_PULSE_WEB_SEARCH", False),
+            web_search_responses_model=ws_model or "gpt-4o",
+            search_planner_model=planner_model or _env_str("OPENAI_MODEL", "gpt-4o-mini"),
+            search_max_queries=_env_int("DC_PULSE_SEARCH_MAX_QUERIES", 5),
+            search_results_per_query=_env_int("DC_PULSE_SEARCH_RESULTS_PER_QUERY", 5),
+            deep_research_enabled=_env_bool("DC_PULSE_DEEP_RESEARCH", True),
+            deep_research_model=deep_model or _env_str("OPENAI_MODEL", "gpt-4o-mini"),
+            article_drafts_enabled=_env_bool("DC_PULSE_ARTICLE_DRAFTS", True),
+            article_draft_count=_env_int("DC_PULSE_ARTICLE_DRAFT_COUNT", 2),
+            article_draft_target_words=_env_int("DC_PULSE_ARTICLE_DRAFT_WORDS", 900),
+            article_draft_timeout_seconds=_env_float("DC_PULSE_ARTICLE_DRAFT_TIMEOUT", 300.0),
+            article_draft_model=draft_model or _env_str("OPENAI_MODEL", "gpt-4o-mini"),
+            usage_history_enabled=_env_bool("DC_PULSE_USAGE_HISTORY", True),
+            usage_history_weeks=_env_int("DC_PULSE_USAGE_HISTORY_WEEKS", 12),
+            usage_history_path=Path(
+                os.environ.get("DC_PULSE_USAGE_HISTORY_PATH", "").strip()
+                or str(data_dir / "weekly_usage.json")
+            ),
             data_dir=data_dir,
             sources_path=data_dir / "sources.yml",
             exclusions_path=data_dir / "topic_exclusions.yml",

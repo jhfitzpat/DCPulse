@@ -10,3 +10,5 @@ archive/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.cursor/
+data/weekly_usage.json

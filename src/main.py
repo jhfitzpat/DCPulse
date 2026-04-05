@@ -9,10 +9,13 @@ import sys
 from datetime import datetime, timezone
 
 from src.config import load_config
+from src.llm.article_drafts import generate_article_drafts_llm
 from src.llm.generate_digest import (
     fallback_digest_without_llm,
     generate_digest_with_llm,
+    week_label,
 )
+from src.research.web_search import collect_web_search_articles
 from src.output.render_email import render_html, render_text, send_digest_email
 from src.pipeline.cluster import cluster_articles
 from src.pipeline.normalize import (
@@ -25,10 +28,28 @@ from src.pipeline.normalize import (
 )
 from src.pipeline.rank import rank_clusters
 from src.pipeline.select import select_top_topics
+from src.pipeline.usage_history import (
+    blocked_urls_in_window,
+    load_usage_file,
+    maybe_record_weekly_usage,
+)
 from src.sources.catalog import load_catalog
 from src.sources.collect import collect_all
 from src.hardening import augment_low_confidence
 from src.output.schema import WeeklyDigest
+
+
+def _finalize_digest(
+    cfg,
+    digest: WeeklyDigest,
+    top,
+    raw_count: int,
+    cluster_count: int,
+) -> WeeklyDigest:
+    """Apply low-confidence augmentation and persist weekly primary URL usage."""
+    out = augment_low_confidence(digest, cfg, raw_count, cluster_count)
+    maybe_record_weekly_usage(cfg, top, out.week_label, cfg.max_topics)
+    return out
 
 
 def setup_logging(level: str) -> None:
@@ -58,6 +79,13 @@ def run_pipeline() -> WeeklyDigest:
         return augment_low_confidence(digest, cfg, 0, 0)
 
     raw = collect_all(sources)
+    if cfg.web_search_enabled:
+        wl = week_label()
+        headlines = [a.title for a in raw[:100]]
+        try:
+            raw.extend(collect_web_search_articles(cfg, wl, headlines))
+        except Exception as e:
+            log.warning("Web search collection failed: %s", e)
     now = datetime.now(timezone.utc)
     raw = filter_by_lookback(raw, cfg.lookback_days, now)
     raw_count = len(raw)
@@ -84,7 +112,18 @@ def run_pipeline() -> WeeklyDigest:
     cluster_count = len(clusters)
     log.info("Clusters: %d", cluster_count)
     ranked = rank_clusters(clusters, rules)
-    top, highlights = select_top_topics(ranked, cfg.max_topics, cfg.highlight_repost_count)
+    if cfg.usage_history_enabled:
+        hist = load_usage_file(cfg.usage_history_path)
+        blocked = blocked_urls_in_window(hist["weeks"], window_weeks=cfg.usage_history_weeks)
+        log.info("Usage history: %d blocked primary URLs (last %d weeks)", len(blocked), cfg.usage_history_weeks)
+    else:
+        blocked = set()
+    top, highlights = select_top_topics(
+        ranked,
+        cfg.max_topics,
+        cfg.highlight_repost_count,
+        blocked_urls=blocked,
+    )
     log.info("Selected %d topics, %d repost highlights", len(top), len(highlights))
 
     use_llm = bool(cfg.openai_api_key) and not cfg.skip_llm
@@ -94,10 +133,16 @@ def run_pipeline() -> WeeklyDigest:
             "OpenAI not configured or skipped. Showing clustered sources with placeholder commentary."
         )
         digest = fallback_digest_without_llm(cfg, top, highlights, note=note)
-        return augment_low_confidence(digest, cfg, raw_count, cluster_count)
+        return _finalize_digest(cfg, digest, top, raw_count, cluster_count)
 
     try:
         digest = generate_digest_with_llm(cfg, top, highlights)
+        if cfg.article_drafts_enabled:
+            try:
+                drafts = generate_article_drafts_llm(cfg, digest, top)
+                digest = digest.model_copy(update={"article_drafts": drafts})
+            except Exception as e:
+                log.exception("Article draft generation failed: %s", e)
     except Exception as e:
         log.exception("LLM failed: %s", e)
         digest = fallback_digest_without_llm(
@@ -106,7 +151,7 @@ def run_pipeline() -> WeeklyDigest:
             highlights,
             note=f"LLM error ({e!s}); showing fallback from clusters.",
         )
-        return augment_low_confidence(digest, cfg, raw_count, cluster_count)
+        return _finalize_digest(cfg, digest, top, raw_count, cluster_count)
 
     if len(digest.topics) < cfg.max_topics and not digest.low_confidence_note:
         digest = digest.model_copy(
@@ -117,7 +162,7 @@ def run_pipeline() -> WeeklyDigest:
                 )
             }
         )
-    return augment_low_confidence(digest, cfg, raw_count, cluster_count)
+    return _finalize_digest(cfg, digest, top, raw_count, cluster_count)
 
 
 def main() -> int:

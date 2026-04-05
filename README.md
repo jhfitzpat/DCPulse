@@ -1,8 +1,8 @@
 # DC Pulse Weekly Pipeline
 
-Automated weekly workflow that collects Canadian pension and benefits coverage from curated RSS feeds, clusters and ranks topics, optionally enriches them with an OpenAI narrative aligned to DC consulting prompts, and emails a digest (up to **7** topics, **3** repost highlights with **two** copy angles each).
+Automated weekly workflow that collects Canadian pension and benefits coverage from curated RSS feeds ([`data/sources.yml`](data/sources.yml)), optionally augments discovery with **LLM-planned web search** (OpenAI Responses API with the built-in `web_search` tool), clusters and ranks to **7** topics, runs a **deep-research** LLM pass on those topics, then (by default) generates **two full-length article drafts** for review. The email includes the digest (7 topics, **3** repost highlights with **two** copy angles each), plus those drafts.
 
-Manual posting to LinkedIn and final article editing stay **out of scope** for v1.
+Manual posting to LinkedIn stays **out of scope**; drafts are **for review** in the email, not auto-published.
 
 ## Requirements
 
@@ -114,7 +114,7 @@ Workflow: [`.github/workflows/weekly-dc-pulse.yml`](.github/workflows/weekly-dc-
 |--------|---------|
 | `OPENAI_API_KEY` | Required for full narrative digest (omit for fallback-only). |
 | `OPENAI_MODEL` | Optional override (defaults to `gpt-4o-mini` in code if unset). |
-| `DC_PULSE_EMAIL_TO` | Recipient(s), comma-separated. |
+| `DC_PULSE_EMAIL_TO` | Recipient(s), comma- or semicolon-separated on one line (spaces allowed). |
 | `DC_PULSE_EMAIL_FROM` | From address. |
 | `DC_PULSE_SMTP_HOST` | SMTP host. |
 | `DC_PULSE_SMTP_PORT` | Port (e.g. `587`). |
@@ -134,8 +134,19 @@ If email secrets are missing, the job still runs and writes `last_digest.txt`; d
 | `DC_PULSE_MAX_TOPICS` | `7` | Max ranked topics. |
 | `DC_PULSE_HIGHLIGHT_REPOST` | `3` | Repost highlights. |
 | `DC_PULSE_SKIP_LLM` | `0` | `1` = force fallback digest. |
-| `DC_PULSE_LLM_TIMEOUT` | `120` | OpenAI timeout (seconds). |
+| `DC_PULSE_LLM_TIMEOUT` | `120` | OpenAI timeout (seconds) for digest LLM. |
 | `DC_PULSE_DATA_DIR` | `./data` | Override path to `sources.yml` / `topic_exclusions.yml`. |
+| `DC_PULSE_WEB_SEARCH` | `0` | `1` = LLM search planner + OpenAI web search (Responses API) merged with RSS. |
+| `DC_PULSE_WEB_SEARCH_MODEL` | `gpt-4o` | Model for Responses API calls with `web_search` tool; must support built-in web search. |
+| `DC_PULSE_DEEP_RESEARCH` | `1` | Use deep seven-topic prompt; `0` = legacy `research.md` only. |
+| `DC_PULSE_DEEP_RESEARCH_MODEL` | (main model) | Model for digest JSON. |
+| `DC_PULSE_ARTICLE_DRAFTS` | `1` | `0` = skip long-form draft generation. |
+| `DC_PULSE_ARTICLE_DRAFT_COUNT` | `2` | Number of full drafts. |
+| `DC_PULSE_ARTICLE_DRAFT_WORDS` | `900` | Target length hint per draft. |
+| `DC_PULSE_ARTICLE_DRAFT_TIMEOUT` | `300` | Seconds for draft LLM call. |
+| `DC_PULSE_ARTICLE_DRAFT_MODEL` | (main model) | Model for article drafts. |
+
+See [`.env.example`](.env.example) for planner/search limits (`DC_PULSE_SEARCH_*`, `DC_PULSE_WEB_SEARCH_MODEL`).
 
 ## Data files
 
@@ -147,13 +158,20 @@ Verify feed URLs periodically; some publishers change RSS endpoints.
 ## Prompts and voice
 
 - [`src/prompts/`](src/prompts/) — ideation, research, repost copy, drafting rules.
+- [`src/prompts/web_search_planner.md`](src/prompts/web_search_planner.md) — LLM search query planner (when web search is on).
+- [`src/prompts/deep_research_seven.md`](src/prompts/deep_research_seven.md) — deep pass on the seven ranked topics (default digest system prompt).
+- [`src/prompts/article_drafts.md`](src/prompts/article_drafts.md) — long-form draft selection and structure.
 - [`src/voice/profile.md`](src/voice/profile.md) — consultant/CFA voice guide.
 
 ## Architecture
 
-1. Collect → normalize/dedupe → cluster (token overlap) → rank → select top 7 + 3 repost.
-2. OpenAI generates structured JSON matching [`src/output/schema.py`](src/output/schema.py).
-3. Render HTML + plain text; send via SMTP.
+1. **Collect** RSS from `sources.yml`; optionally **web search** (planner + OpenAI Responses API with `web_search` tool) merged as additional articles before lookback.
+2. **Normalize** / dedupe → **cluster** (token overlap) → **rank** → select **top 7** + **3** repost highlights.
+3. **Deep research LLM** ([`src/prompts/deep_research_seven.md`](src/prompts/deep_research_seven.md)) produces the weekly digest JSON; repost URLs are grounded in cluster articles.
+4. **Article drafts LLM** selects two topics for long-form posts and generates Markdown drafts ([`src/prompts/article_drafts.md`](src/prompts/article_drafts.md)); configurable via `DC_PULSE_ARTICLE_DRAFTS` / `DC_PULSE_ARTICLE_DRAFT_COUNT`.
+5. Render HTML + plain text (digest + drafts); send via SMTP.
+
+Enable web search: set `DC_PULSE_WEB_SEARCH=1` and `OPENAI_API_KEY` (used for the query planner and for [Responses API](https://platform.openai.com/docs/guides/tools-web-search) calls with the `web_search` tool). Optionally set `DC_PULSE_WEB_SEARCH_MODEL` if the default `gpt-4o` is not desired.
 
 ## License
 

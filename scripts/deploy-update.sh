@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Manually sync local repo to the VM (Git Bash / WSL / Linux / macOS).
 # Environment: DC_PULSE_VM_HOST, DC_PULSE_VM_PATH (required); optional DC_PULSE_SSH_USER,
-# DC_PULSE_DEPLOY_MODE (git|rsync, default git), DC_PULSE_GIT_BRANCH (default main).
+# DC_PULSE_DEPLOY_MODE (git|rsync, default git), DC_PULSE_GIT_BRANCH (default master).
 set -euo pipefail
 
 MODE="${DC_PULSE_DEPLOY_MODE:-git}"
-BRANCH="${DC_PULSE_GIT_BRANCH:-main}"
+BRANCH="${DC_PULSE_GIT_BRANCH:-master}"
 VM_HOST="${DC_PULSE_VM_HOST:-}"
 REMOTE_PATH="${DC_PULSE_VM_PATH:-}"
 SSH_USER="${DC_PULSE_SSH_USER:-}"

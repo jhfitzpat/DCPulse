@@ -15,6 +15,16 @@ from src.output.schema import WeeklyDigest
 log = logging.getLogger(__name__)
 
 
+def parse_recipient_list(raw: str) -> List[str]:
+    """Split comma- or semicolon-separated addresses; strip whitespace; drop empties."""
+    out: List[str] = []
+    for chunk in raw.replace(";", ",").split(","):
+        addr = chunk.strip()
+        if addr:
+            out.append(addr)
+    return out
+
+
 def render_text(d: WeeklyDigest) -> str:
     lines: List[str] = [
         f"DC Pulse Weekly — {d.week_label}",
@@ -69,6 +79,18 @@ def render_text(d: WeeklyDigest) -> str:
     lines.append("")
     if d.low_confidence_note:
         lines.append(f"Note: {d.low_confidence_note}")
+    if d.article_drafts:
+        lines.append("")
+        lines.append("=== Full-length article drafts (for editorial review — not published automatically) ===")
+        lines.append("")
+        for i, ad in enumerate(d.article_drafts, start=1):
+            lines.append(f"--- Draft {i}: {ad.draft_title} ---")
+            lines.append(f"Topic: {ad.topic_title}")
+            if ad.selection_rationale:
+                lines.append(f"Why this week: {ad.selection_rationale}")
+            lines.append("")
+            lines.append(ad.body_markdown)
+            lines.append("")
     return "\n".join(lines)
 
 
@@ -130,8 +152,39 @@ def render_html(d: WeeklyDigest) -> str:
     parts.append("</ul>")
     if d.low_confidence_note:
         parts.append(f"<p class='muted'>{escape(d.low_confidence_note)}</p>")
+    if d.article_drafts:
+        parts.append("<h2>Full-length article drafts</h2>")
+        parts.append(
+            "<p class='muted'>For editorial review only — not published automatically.</p>"
+        )
+        for i, ad in enumerate(d.article_drafts, start=1):
+            parts.append("<section class='draft'>")
+            parts.append(f"<h3>{escape(ad.draft_title)}</h3>")
+            parts.append(f"<p class='muted'><em>Topic:</em> {escape(ad.topic_title)}</p>")
+            if ad.selection_rationale:
+                parts.append(f"<p class='muted'><em>Why this week:</em> {escape(ad.selection_rationale)}</p>")
+            parts.append(_draft_body_html(ad.body_markdown))
+            parts.append("</section>")
     parts.append("</body></html>")
     return "\n".join(parts)
+
+
+def _draft_body_html(md: str) -> str:
+    """Minimal Markdown-ish body: paragraphs and line breaks; no untrusted HTML."""
+    blocks = [p.strip() for p in md.split("\n\n") if p.strip()]
+    if not blocks:
+        return ""
+    out: List[str] = []
+    for block in blocks:
+        if block.startswith("#"):
+            level = len(block) - len(block.lstrip("#"))
+            title = block.lstrip("#").strip()
+            tag = f"h{min(max(level, 1), 3)}"
+            out.append(f"<{tag}>{escape(title)}</{tag}>")
+        else:
+            inner = escape(block).replace("\n", "<br/>")
+            out.append(f"<div class='draft-block'>{inner}</div>")
+    return "".join(out)
 
 
 def send_digest_email(cfg: Config, subject: str, text_body: str, html_body: str) -> None:
@@ -142,16 +195,21 @@ def send_digest_email(cfg: Config, subject: str, text_body: str, html_body: str)
     if not cfg.email_to or not cfg.smtp_host:
         log.warning("Email skipped: DC_PULSE_EMAIL_TO or DC_PULSE_SMTP_HOST not set")
         return
+    recipients = parse_recipient_list(cfg.email_to)
+    if not recipients:
+        log.warning("Email skipped: DC_PULSE_EMAIL_TO has no valid addresses")
+        return
+
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
     msg["From"] = cfg.email_from or cfg.smtp_user or "dc-pulse@localhost"
-    msg["To"] = cfg.email_to
+    msg["To"] = ", ".join(recipients)
     msg.attach(MIMEText(text_body, "plain", "utf-8"))
     msg.attach(MIMEText(html_body, "html", "utf-8"))
-    log.info("Sending email to %s via %s:%s", cfg.email_to, cfg.smtp_host, cfg.smtp_port)
+    log.info("Sending email to %s via %s:%s", recipients, cfg.smtp_host, cfg.smtp_port)
     with smtplib.SMTP(cfg.smtp_host, cfg.smtp_port, timeout=60) as smtp:
         if cfg.smtp_use_tls:
             smtp.starttls()
         if cfg.smtp_user and cfg.smtp_password:
             smtp.login(cfg.smtp_user, cfg.smtp_password)
-        smtp.sendmail(msg["From"], cfg.email_to.split(","), msg.as_string())
+        smtp.sendmail(msg["From"], recipients, msg.as_string())

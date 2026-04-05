@@ -24,7 +24,7 @@ from src.pipeline.select import primary_article_for_cluster
 log = logging.getLogger(__name__)
 
 
-def _week_label(now: Optional[datetime] = None) -> str:
+def week_label(now: Optional[datetime] = None) -> str:
     now = now or datetime.now(timezone.utc)
     y, w, _ = now.isocalendar()
     return f"{y}-W{w:02d}"
@@ -49,6 +49,31 @@ def build_system_prompt(cfg: Config) -> str:
         "Do not include markdown fences. Do not add commentary outside JSON.",
     ]
     return "\n\n".join(p for p in parts if p.strip())
+
+
+def build_system_prompt_deep(cfg: Config) -> str:
+    """Seven-topic deep research pass: prefer deep_research_seven.md over research.md."""
+    deep = _load_text(cfg.prompts_dir / "deep_research_seven.md")
+    research_part = deep.strip() if deep.strip() else _load_text(cfg.prompts_dir / "research.md")
+    parts = [
+        "You are an AI research assistant for a Canadian defined contribution pension consulting practice.",
+        _load_text(cfg.voice_path),
+        _load_text(cfg.prompts_dir / "ideation.md"),
+        research_part,
+        _load_text(cfg.prompts_dir / "repost_copy.md"),
+        _load_text(cfg.prompts_dir / "drafting.md"),
+        "",
+        "You MUST respond with a single JSON object matching the schema described in the user message.",
+        "Do not include markdown fences. Do not add commentary outside JSON.",
+        "All citation URLs and repost primary_article_url values must come from article URLs provided in clusters_for_digest.",
+    ]
+    return "\n\n".join(p for p in parts if p.strip())
+
+
+def build_system_prompt_for_digest(cfg: Config) -> str:
+    if cfg.deep_research_enabled:
+        return build_system_prompt_deep(cfg)
+    return build_system_prompt(cfg)
 
 
 def _cluster_to_dict(sc: ScoredCluster) -> Dict[str, Any]:
@@ -131,13 +156,14 @@ def generate_digest_with_llm(
     top_scored: List[ScoredCluster],
     highlight_scored: List[ScoredCluster],
 ) -> WeeklyDigest:
-    week_label = _week_label()
-    system = build_system_prompt(cfg)
-    user = build_user_message(top_scored, highlight_scored, week_label)
+    wl = week_label()
+    system = build_system_prompt_for_digest(cfg)
+    user = build_user_message(top_scored, highlight_scored, wl)
+    model = cfg.deep_research_model if cfg.deep_research_enabled else cfg.openai_model
     client = OpenAI(api_key=cfg.openai_api_key, timeout=cfg.llm_timeout_seconds)
-    log.info("Calling OpenAI model %s", cfg.openai_model)
+    log.info("Calling OpenAI digest model %s (deep_research=%s)", model, cfg.deep_research_enabled)
     resp = client.chat.completions.create(
-        model=cfg.openai_model,
+        model=model,
         temperature=0.35,
         response_format={"type": "json_object"},
         messages=[
@@ -148,12 +174,13 @@ def generate_digest_with_llm(
     text = (resp.choices[0].message.content or "").strip()
     data = json.loads(text)
     digest = WeeklyDigest.model_validate(data)
-    # Ensure week_label from pipeline; cap list lengths
+    # Ensure week_label from pipeline; cap list lengths; digest LLM does not emit article_drafts
     digest = digest.model_copy(
         update={
-            "week_label": week_label,
+            "week_label": wl,
             "topics": digest.topics[: cfg.max_topics],
             "repost_highlights": digest.repost_highlights[: cfg.highlight_repost_count],
+            "article_drafts": [],
         }
     )
     return _enforce_constraints(cfg, digest, highlight_scored)
@@ -203,7 +230,7 @@ def fallback_digest_without_llm(
     note: str,
 ) -> WeeklyDigest:
     """Deterministic digest when LLM is skipped or unavailable."""
-    week_label = _week_label()
+    wl = week_label()
     topics: List[TopicDigest] = []
     for i, sc in enumerate(top_scored[: cfg.max_topics], start=1):
         c = sc.cluster
@@ -246,7 +273,7 @@ def fallback_digest_without_llm(
             )
         )
     return WeeklyDigest(
-        week_label=week_label,
+        week_label=wl,
         intro=note,
         topics=topics,
         repost_highlights=highlights,
@@ -254,4 +281,5 @@ def fallback_digest_without_llm(
         best_thought_leadership_month=[t.topic_title for t in topics[:3]],
         topics_to_avoid=["Run LLM pass for curated 'avoid' list based on current chatter."],
         low_confidence_note="LLM disabled or unavailable; narratives are placeholders. Enable OPENAI_API_KEY for full digest.",
+        article_drafts=[],
     )

@@ -6,7 +6,7 @@
 #   DC_PULSE_VM_PATH    - absolute path to repo on VM, e.g. /home/you/DCPulse (required)
 #   DC_PULSE_SSH_USER   - optional SSH user (default: current Windows user name may not match; set explicitly)
 #   DC_PULSE_DEPLOY_MODE - "git" (default) or "rsync"
-#   DC_PULSE_GIT_BRANCH - branch to checkout on VM when using git mode (default: main)
+#   DC_PULSE_GIT_BRANCH - branch to checkout on VM when using git mode (default: master)
 #
 # Git mode: commit and push to your remote first, then this script runs git pull on the VM.
 # Rsync mode: requires rsync in PATH (e.g. WSL, Cygwin, or cwRsync); copies working tree without a push.
@@ -16,7 +16,7 @@ param(
     [string] $RemotePath = $env:DC_PULSE_VM_PATH,
     [ValidateSet("git", "rsync")]
     [string] $Mode = $(if ($env:DC_PULSE_DEPLOY_MODE) { $env:DC_PULSE_DEPLOY_MODE } else { "git" }),
-    [string] $Branch = $(if ($env:DC_PULSE_GIT_BRANCH) { $env:DC_PULSE_GIT_BRANCH } else { "main" }),
+    [string] $Branch = $(if ($env:DC_PULSE_GIT_BRANCH) { $env:DC_PULSE_GIT_BRANCH } else { "master" }),
     [string] $SshUser = $env:DC_PULSE_SSH_USER
 )
 

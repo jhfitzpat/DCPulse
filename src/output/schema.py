@@ -62,6 +62,18 @@ class TopicDigest(BaseModel):
     citations: List[SourceCitation] = Field(default_factory=list)
 
 
+class ArticleDraft(BaseModel):
+    """Full-length article draft for editorial review (not auto-published)."""
+
+    topic_title: str = Field(..., description="Topic from the weekly digest this draft extends")
+    draft_title: str = Field(..., description="Working title for the article")
+    body_markdown: str = Field(..., description="Full draft body in Markdown")
+    selection_rationale: str = Field(
+        default="",
+        description="Why this topic was chosen for a long-form piece this week",
+    )
+
+
 class WeeklyDigest(BaseModel):
     """Full weekly email payload."""
 
@@ -84,6 +96,10 @@ class WeeklyDigest(BaseModel):
     low_confidence_note: Optional[str] = Field(
         None,
         description="If fewer than max topics or weak coverage, explain here",
+    )
+    article_drafts: List[ArticleDraft] = Field(
+        default_factory=list,
+        description="Full-length drafts for review; typically two thought-leadership pieces per week",
     )
 
     @field_validator("topics")

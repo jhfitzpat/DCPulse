@@ -4,21 +4,64 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
-from typing import List, Tuple
+from typing import List, Set, Tuple
 
 from src.pipeline.cluster import TopicCluster, _tokens
 from src.pipeline.rank import ScoredCluster
+from src.pipeline.usage_history import canonical_url
 
 log = logging.getLogger(__name__)
+
+
+def pick_top_topics(
+    ranked: List[ScoredCluster],
+    max_topics: int,
+    blocked_urls: Set[str],
+) -> List[ScoredCluster]:
+    """
+    Greedy selection in rank order: prefer clusters whose primary URL is not in blocked_urls,
+    then fill from remaining ranked clusters (may reuse previously featured URLs).
+    """
+    if max_topics <= 0:
+        return []
+    blocked = {canonical_url(u) for u in blocked_urls if u}
+    picked: List[ScoredCluster] = []
+    picked_ids: Set[str] = set()
+
+    for sc in ranked:
+        if len(picked) >= max_topics:
+            break
+        url, _ = primary_article_for_cluster(sc.cluster)
+        if canonical_url(url) not in blocked:
+            picked.append(sc)
+            picked_ids.add(sc.cluster.id)
+
+    if len(picked) < max_topics:
+        log.warning(
+            "Only %d clusters with unused primary URLs; filling to %d from ranked list (reusing featured URLs).",
+            len(picked),
+            max_topics,
+        )
+        for sc in ranked:
+            if len(picked) >= max_topics:
+                break
+            if sc.cluster.id in picked_ids:
+                continue
+            picked.append(sc)
+            picked_ids.add(sc.cluster.id)
+
+    return picked
 
 
 def select_top_topics(
     ranked: List[ScoredCluster],
     max_topics: int = 7,
     highlight_repost: int = 3,
+    blocked_urls: Set[str] | None = None,
 ) -> Tuple[List[ScoredCluster], List[ScoredCluster]]:
     """Return (top topics for digest, subset flagged for repost highlights)."""
-    top = ranked[:max_topics]
+    blocked = blocked_urls if blocked_urls is not None else set()
+    top = pick_top_topics(ranked, max_topics, blocked)
     # Heuristic: prefer clusters with media/third-party URLs and multiple sources for repost
     repost_pool: List[ScoredCluster] = []
     for s in top:

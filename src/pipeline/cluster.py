@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from typing import List, Set
 
 from src.pipeline.normalize import NormalizedArticle
@@ -42,6 +43,16 @@ class TopicCluster:
         return u
 
 
+def _published_sort_key(n: NormalizedArticle) -> datetime:
+    """Sort key safe for mixed naive/aware/None (e.g. RSS + web search hits)."""
+    p = n.raw.published
+    if p is None:
+        return datetime.min.replace(tzinfo=timezone.utc)
+    if p.tzinfo is None:
+        return p.replace(tzinfo=timezone.utc)
+    return p
+
+
 def _best_label(articles: List[NormalizedArticle]) -> str:
     if not articles:
         return "Unknown"
@@ -62,7 +73,7 @@ def cluster_articles(
         return []
     clusters: List[TopicCluster] = []
     cid = 0
-    for n in sorted(articles, key=lambda x: x.raw.published or __import__("datetime").datetime.min, reverse=True):
+    for n in sorted(articles, key=_published_sort_key, reverse=True):
         t_n = _tokens(n.normalized_title)
         merged = False
         for c in clusters:

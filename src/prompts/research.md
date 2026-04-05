@@ -1,5 +1,9 @@
 # Research excellence rules
 
+## Mixed corpus (RSS + optional web search)
+
+When the pipeline includes **web search** hits (OpenAI `web_search` tool), treat them like other articles: prefer credible URLs, and do **not** treat search snippets as proof of broader media coverage. LinkedIn hits are often **incomplete** (index-only).
+
 ## Source quality bar
 
 Prefer and cite:
