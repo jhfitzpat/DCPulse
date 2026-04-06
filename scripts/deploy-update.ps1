@@ -33,7 +33,7 @@ $sshTarget = if ($SshUser) { "${SshUser}@${VmHost}" } else { $VmHost }
 
 if ($Mode -eq "git") {
     Write-Host "Remote: git fetch / checkout $Branch / pull + pip install (push from your PC first)."
-    $remoteCmd = "set -e; cd '$RemotePath'; git fetch origin; git checkout '$Branch'; git pull --ff-only; .venv/bin/pip install -q -r requirements.txt"
+    $remoteCmd = "set -e; cd '$RemotePath'; git fetch origin; git checkout '$Branch'; git pull --ff-only; chmod +x scripts/*.sh; .venv/bin/pip install -q -r requirements.txt"
     ssh $sshTarget $remoteCmd
     Write-Host "Done."
     exit 0
@@ -57,5 +57,5 @@ $rsyncArgs = @(
 $dest = "${sshTarget}:${RemotePath}/"
 Write-Host "rsync $repoRoot/ -> $dest"
 & rsync @rsyncArgs ./ $dest
-ssh $sshTarget "set -e; cd '$RemotePath'; .venv/bin/pip install -q -r requirements.txt"
+ssh $sshTarget "set -e; cd '$RemotePath'; chmod +x scripts/*.sh; .venv/bin/pip install -q -r requirements.txt"
 Write-Host "Done."

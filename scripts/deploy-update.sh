@@ -20,7 +20,7 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 if [[ "$MODE" == "git" ]]; then
   echo "Remote: git pull on $SSH_TARGET:$REMOTE_PATH (push from this machine first)"
-  ssh "$SSH_TARGET" "set -e; cd '$REMOTE_PATH'; git fetch origin; git checkout '$BRANCH'; git pull --ff-only; .venv/bin/pip install -q -r requirements.txt"
+  ssh "$SSH_TARGET" "set -e; cd '$REMOTE_PATH'; git fetch origin; git checkout '$BRANCH'; git pull --ff-only; chmod +x scripts/*.sh; .venv/bin/pip install -q -r requirements.txt"
   echo "Done."
   exit 0
 fi
@@ -33,7 +33,7 @@ if [[ "$MODE" == "rsync" ]]; then
     --exclude=logs/ --exclude=archive/ --exclude=.pytest_cache/ \
     --exclude=.mypy_cache/ --exclude=.ruff_cache/ --exclude='*.egg-info/' \
     "$REPO_ROOT/" "$SSH_TARGET:$REMOTE_PATH/"
-  ssh "$SSH_TARGET" "set -e; cd '$REMOTE_PATH'; .venv/bin/pip install -q -r requirements.txt"
+  ssh "$SSH_TARGET" "set -e; cd '$REMOTE_PATH'; chmod +x scripts/*.sh; .venv/bin/pip install -q -r requirements.txt"
   echo "Done."
   exit 0
 fi

@@ -95,6 +95,8 @@ The weekly digest runs on a **Debian VM** (e.g. Proxmox) via **cron** or **syste
 
    If `OnCalendar=... UTC` is not supported by your systemd version, use cron with `CRON_TZ=UTC` or set the VM timezone and adjust the calendar.
 
+   **Cron requires an executable script:** `scripts/run-weekly.sh` must be mode `755` (or otherwise executable). Without `+x`, cron will not run it and no log file is created. [`scripts/setup-vm.sh`](scripts/setup-vm.sh) and deploy scripts run `chmod +x scripts/*.sh`; the repo stores `run-weekly.sh` as executable in git.
+
 6. **Logs and digest archive**: [`scripts/run-weekly.sh`](scripts/run-weekly.sh) appends to `logs/dc-pulse.log` and copies `last_digest.txt` to `archive/YYYY-MM-DD.txt`. Override with `DC_PULSE_LOG_DIR`, `DC_PULSE_ARCHIVE_DIR`, or `DC_PULSE_LOG_FILE` if needed.
 
 ### Email troubleshooting

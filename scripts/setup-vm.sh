@@ -36,4 +36,6 @@ if [[ ! -f .env ]]; then
   echo "Edit .env with your secrets, then: chmod 600 .env" >&2
 fi
 
+chmod +x scripts/*.sh
+
 echo "Setup complete. Configure .env, then test: ./.venv/bin/python -m src.main --print --dry-run"
