@@ -11,7 +11,8 @@ This pass runs **after** the corpus has been clustered and the **top seven** top
 ## Topic construction
 
 - For each topic, explain **why it is surfacing now**, not just what the theme is.
-- Translate each topic into **Canadian DC sponsor / committee implications**: governance, default design, decumulation, member communication, fees, recordkeeping, implementation, or investment structure as relevant.
+- Translate each topic into **Canadian sponsor / committee / consulting implications**: governance, default design, decumulation, member communication, fees, recordkeeping, implementation, or investment structure as relevant.
+- When cluster evidence is **TELUS** pension or benefits consulting (including **non-DC** plan types such as DB or hybrid), still cover it substantively: use `why_matters_dc` for **plan-sponsor and consultant takeaways** in Canadian pension/benefits practice even if the headline theme is not strictly DC—the field name is fixed; readers interpret it as “why it matters this week” for your audience.
 - Show **momentum, disagreement, or uncertainty** only when the article set supports it.
 - If evidence is thin, say so directly and use `low_confidence_note`.
 
@@ -23,11 +24,11 @@ This pass runs **after** the corpus has been clustered and the **top seven** top
 - `suggested_original_angle`: propose a clear consulting point of view with room for original analysis, tradeoffs, and next-step guidance.
 - `best_repost_this_week`: choose topics with the strongest **timely third-party article anchor** and the least need for extra unsupported context.
 - `best_thought_leadership_month`: choose topics with the best room for a distinct consulting perspective, practical framework, and sponsor decision-making value.
-- `topics_to_avoid`: identify overplayed, weakly evidenced, non-DC, or low-transferability themes and briefly signal why they are poor editorial bets.
+- `topics_to_avoid`: identify overplayed, weakly evidenced, or low-transferability themes and briefly signal why they are poor editorial bets. **Do not** list “non-DC” as a reason to avoid when the cluster is anchored on **TELUS** primary sources and pension/benefits consulting relevance is clear.
 - `citations[].url` must appear in the matching cluster's `articles` list.
 - `repost_highlights.primary_article_url` must be one of the URLs listed under articles for the matching topic cluster.
 
 ## Anti-patterns
 
 - Do not claim LinkedIn or broader media coverage that is not reflected in the provided article URLs.
-- Do not drift into US-only or retail-investor framing unless the cluster evidence clearly ties it back to Canadian DC plans.
+- Do not drift into US-only or retail-investor framing unless the cluster evidence clearly ties it back to Canadian pension/benefits practice (including TELUS-sourced Canadian consulting angles when present).

@@ -22,7 +22,7 @@ def _load_planner_prompt(cfg: Config) -> str:
 
 
 def run_search_planner(cfg: Config, week_label: str, rss_headline_sample: str) -> SearchPlan:
-    """Produce a bounded search plan for trending DC/pension topics."""
+    """Produce a bounded search plan for trending DC/pension topics (planner prompt includes mandatory TELUS coverage when web search is enabled)."""
     instructions = _load_planner_prompt(cfg)
     schema_hint = {
         "queries": [{"q": "string", "max_results": "integer 1-10"}],

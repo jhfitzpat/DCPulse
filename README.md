@@ -200,7 +200,7 @@ Verify feed URLs periodically; some publishers change RSS endpoints.
 
 ## Architecture
 
-1. **Collect** RSS from `sources.yml`; optionally **web search** (planner + OpenAI Responses API with `web_search` tool) merged as additional articles before lookback.
+1. **Collect** RSS from `sources.yml`; optionally **web search** (planner in [`src/prompts/web_search_planner.md`](src/prompts/web_search_planner.md)—including a **mandatory TELUS** pension/benefits query when web search is on—plus OpenAI Responses API with `web_search` tool) merged as additional articles before lookback.
 2. **Normalize** / dedupe → **cluster** (token overlap) → **rank** → select **top 7** + **3** repost highlights.
 3. **Deep research LLM** ([`src/prompts/deep_research_seven.md`](src/prompts/deep_research_seven.md)) produces the weekly digest JSON; repost URLs are grounded in cluster articles.
 4. **Article drafts LLM** selects two topics for long-form posts and generates Markdown drafts ([`src/prompts/article_drafts.md`](src/prompts/article_drafts.md)); configurable via `DC_PULSE_ARTICLE_DRAFTS` / `DC_PULSE_ARTICLE_DRAFT_COUNT`.

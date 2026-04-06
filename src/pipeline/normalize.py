@@ -42,6 +42,9 @@ DC_KEYWORDS = frozenset(
         "cap accumulation",
         "financial wellness",
         "member",
+        # Boost TELUS pension/benefits consulting hits (including non-DC) for ranking/clustering
+        "telus",
+        "telus health",
     }
 )
 

@@ -63,8 +63,10 @@ def fetch_hits_for_query(cfg: Config, query: str, max_results: int) -> List[Sear
     client = OpenAI(api_key=cfg.openai_api_key, timeout=min(cfg.llm_timeout_seconds, 180.0))
     instructions = (
         "You have access to the web_search tool. Use it to find current, credible pages "
-        "relevant to the query (Canadian DC pensions, benefits, recordkeeping, consultants, "
-        "asset managers, or indexed LinkedIn/public commentary when useful).\n\n"
+        "relevant to the query (Canadian pensions and benefits, DC plans where applicable, "
+        "recordkeeping, consultants, asset managers, TELUS/TELUS Health pension or benefits "
+        "consulting when the query asks for it—including non-DC plan types if that matches the query—and "
+        "indexed LinkedIn/public commentary when useful).\n\n"
         "After searching, respond with ONLY a single JSON object (no markdown fences) of the form:\n"
         '{"hits":[{"title":"string","url":"https://...","snippet":"string"}]}\n'
         f"Include at most {max_results} distinct articles. Snippets under 500 characters. "

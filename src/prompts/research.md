@@ -7,7 +7,8 @@ When the pipeline includes **web search** hits (OpenAI `web_search` tool), treat
 ## DC consulting lens
 
 - Prioritize topics that matter to **Canadian DC sponsors and committees**: governance, defaults, member outcomes, decumulation, fees, communications, recordkeeping, and implementation.
-- Exclude or sharply down-rank DB-only, retail-investor, personal-finance, or US-only stories unless their relevance to Canadian DC plans is explicit.
+- **Exception:** **TELUS** pension or benefits consulting content (including **DB, hybrid, or non-DC** themes) from TELUS-owned or clearly TELUS-attributed sources should be treated as **in scope** when it informs Canadian plan sponsors or consultants, not down-ranked solely for being non-DC.
+- Exclude or sharply down-rank **non-TELUS** DB-only, retail-investor, personal-finance, or US-only stories unless their relevance to Canadian DC plans is explicit.
 
 ## Source quality bar
 
