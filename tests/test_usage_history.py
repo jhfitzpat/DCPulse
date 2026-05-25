@@ -58,30 +58,29 @@ def test_canonical_url_empty():
 
 def test_blocked_urls_in_window_respects_rolling_window():
     now = datetime(2026, 6, 1, tzinfo=timezone.utc)
-    weeks = {"2025-W01": {"primary_urls": ["https://old.example/a"]}}
-    blocked = blocked_urls_in_window(weeks, now=now, window_weeks=12)
+    weeks = {"2025-01": {"primary_urls": ["https://old.example/a"]}}
+    blocked = blocked_urls_in_window(weeks, now=now, window_months=12)
     assert canonical_url("https://old.example/a") not in blocked
 
 
-def test_blocked_urls_in_window_includes_current_iso_week():
+def test_blocked_urls_in_window_includes_current_month():
     now = datetime(2026, 6, 1, tzinfo=timezone.utc)
-    y, w, _ = now.isocalendar()
-    label = f"{y}-W{w:02d}"
-    weeks = {label: {"primary_urls": ["https://thisweek.example/x"]}}
-    blocked = blocked_urls_in_window(weeks, now=now, window_weeks=12)
-    assert canonical_url("https://thisweek.example/x") in blocked
+    label = f"{now.year}-{now.month:02d}"
+    weeks = {label: {"primary_urls": ["https://thismonth.example/x"]}}
+    blocked = blocked_urls_in_window(weeks, now=now, window_months=12)
+    assert canonical_url("https://thismonth.example/x") in blocked
 
 
 def test_blocked_urls_in_window_zero_window():
-    assert blocked_urls_in_window({"2026-W01": {"primary_urls": ["https://x.com"]}}, window_weeks=0) == set()
+    assert blocked_urls_in_window({"2026-05": {"primary_urls": ["https://x.com"]}}, window_months=0) == set()
 
 
 def test_record_week_roundtrip(tmp_path):
     p = tmp_path / "weekly_usage.json"
-    record_week(p, "2026-W10", ["https://a.com/x", "https://b.com/y"], prune_older_than_weeks=None)
+    record_week(p, "2026-05", ["https://a.com/x", "https://b.com/y"], prune_older_than_months=None)
     data = load_usage_file(p)
-    assert "2026-W10" in data["weeks"]
-    assert len(data["weeks"]["2026-W10"]["primary_urls"]) == 2
+    assert "2026-05" in data["weeks"]
+    assert len(data["weeks"]["2026-05"]["primary_urls"]) == 2
 
 
 def test_pick_top_topics_prefers_unblocked():

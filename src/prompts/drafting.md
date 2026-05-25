@@ -10,7 +10,7 @@ These rules apply when proposing or drafting **original** articles for a **corpo
 
 ## Grounding
 
-- Stay within the evidence and themes supplied in the weekly digest context. Do **not** introduce fresh factual claims, quoted studies, named statistics, or legal conclusions unless the user payload already supports them.
+- Stay within the evidence and themes supplied in the monthly digest context. Do **not** introduce fresh factual claims, quoted studies, named statistics, or legal conclusions unless the user payload already supports them.
 - When the evidence is directional rather than conclusive, write as a consultant: frame implications, tradeoffs, and diligence questions instead of overstating certainty.
 - Separate **observed trend** from **consulting interpretation**.
 

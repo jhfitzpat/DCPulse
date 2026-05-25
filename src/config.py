@@ -75,9 +75,9 @@ class Config:
     article_draft_target_words: int
     article_draft_timeout_seconds: float
     article_draft_model: str
-    # Week-to-week primary URL usage (rolling window)
+    # Month-to-month primary URL usage (rolling window)
     usage_history_enabled: bool
-    usage_history_weeks: int
+    usage_history_months: int
     usage_history_path: Path
     # Paths
     data_dir: Path
@@ -103,7 +103,7 @@ class Config:
         return cls(
             dry_run=_env_bool("DC_PULSE_DRY_RUN", False),
             log_level=os.environ.get("DC_PULSE_LOG_LEVEL", "INFO").upper(),
-            lookback_days=_env_int("DC_PULSE_LOOKBACK_DAYS", 14),
+            lookback_days=_env_int("DC_PULSE_LOOKBACK_DAYS", 30),
             max_topics=_env_int("DC_PULSE_MAX_TOPICS", 7),
             highlight_repost_count=_env_int("DC_PULSE_HIGHLIGHT_REPOST", 3),
             openai_api_key=os.environ.get("OPENAI_API_KEY") or None,
@@ -118,7 +118,7 @@ class Config:
             smtp_password=os.environ.get("DC_PULSE_SMTP_PASSWORD") or None,
             smtp_use_tls=_env_bool("DC_PULSE_SMTP_TLS", True),
             smtp_use_ssl=smtp_use_ssl,
-            email_subject_prefix=os.environ.get("DC_PULSE_EMAIL_SUBJECT_PREFIX", "DC Pulse Weekly"),
+            email_subject_prefix=os.environ.get("DC_PULSE_EMAIL_SUBJECT_PREFIX", "DC Pulse Monthly"),
             web_search_enabled=_env_bool("DC_PULSE_WEB_SEARCH", False),
             web_search_responses_model=ws_model or "gpt-4o",
             search_planner_model=planner_model or _env_str("OPENAI_MODEL", "gpt-4o-mini"),
@@ -132,7 +132,10 @@ class Config:
             article_draft_timeout_seconds=_env_float("DC_PULSE_ARTICLE_DRAFT_TIMEOUT", 300.0),
             article_draft_model=draft_model or _env_str("OPENAI_MODEL", "gpt-4o-mini"),
             usage_history_enabled=_env_bool("DC_PULSE_USAGE_HISTORY", True),
-            usage_history_weeks=_env_int("DC_PULSE_USAGE_HISTORY_WEEKS", 12),
+            usage_history_months=_env_int(
+                "DC_PULSE_USAGE_HISTORY_MONTHS",
+                _env_int("DC_PULSE_USAGE_HISTORY_WEEKS", 12),
+            ),
             usage_history_path=Path(
                 os.environ.get("DC_PULSE_USAGE_HISTORY_PATH", "").strip()
                 or str(data_dir / "weekly_usage.json")

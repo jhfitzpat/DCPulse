@@ -1,4 +1,4 @@
-"""Rolling-window history of primary article URLs featured in weekly digests.
+"""Rolling-window history of primary article URLs featured in monthly digests.
 
 Ephemeral CI runners (e.g. GitHub Actions) do not persist the repo between runs unless you
 commit ``weekly_usage.json``, use a cache step, or set ``DC_PULSE_DATA_DIR`` to a persistent path.
@@ -8,7 +8,8 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime, timedelta, timezone
+import re
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Set
 
@@ -18,6 +19,8 @@ if TYPE_CHECKING:
 from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
 log = logging.getLogger(__name__)
+
+_MONTH_LABEL = re.compile(r"^(\d{4})-(\d{2})$")
 
 
 def canonical_url(url: str) -> str:
@@ -47,7 +50,7 @@ def canonical_url(url: str) -> str:
 
 
 def _parse_week_label(wl: str) -> tuple[int, int] | None:
-    """Parse 'YYYY-Www' ISO week label to (year, week)."""
+    """Parse legacy 'YYYY-Www' ISO week label to (year, week)."""
     wl = (wl or "").strip()
     if len(wl) < 7 or "W" not in wl:
         return None
@@ -62,35 +65,59 @@ def _week_monday(year: int, week: int) -> datetime:
     return datetime.fromisocalendar(year, week, 1).replace(tzinfo=timezone.utc)
 
 
+def _month_start(year: int, month: int) -> datetime:
+    return datetime(year, month, 1, tzinfo=timezone.utc)
+
+
+def _months_before(dt: datetime, months: int) -> datetime:
+    y, m = dt.year, dt.month - months
+    while m <= 0:
+        m += 12
+        y -= 1
+    return _month_start(y, m)
+
+
+def _period_start(label: str) -> datetime | None:
+    """Return period start for YYYY-MM labels or legacy YYYY-Www week labels."""
+    match = _MONTH_LABEL.match((label or "").strip())
+    if match:
+        year, month = int(match.group(1)), int(match.group(2))
+        if 1 <= month <= 12:
+            return _month_start(year, month)
+        return None
+    parsed = _parse_week_label(label)
+    if not parsed:
+        return None
+    wy, ww = parsed
+    try:
+        return _week_monday(wy, ww)
+    except ValueError:
+        return None
+
+
 def blocked_urls_in_window(
     weeks: Dict[str, Any],
     now: datetime | None = None,
-    window_weeks: int = 12,
+    window_months: int = 12,
 ) -> Set[str]:
     """
-    Union of primary_urls from history weeks whose Monday falls within the last
-    `window_weeks` ISO-week periods (day-based cutoff from current week's Monday).
+    Union of primary_urls from history periods whose start falls within the last
+    `window_months` calendar months (supports legacy ISO-week keys).
     """
     now = now or datetime.now(timezone.utc)
-    if window_weeks <= 0:
+    if window_months <= 0:
         return set()
-    y, w, _ = now.isocalendar()
-    current_monday = _week_monday(y, w)
-    cutoff = current_monday - timedelta(weeks=window_weeks)
+    current_start = _month_start(now.year, now.month)
+    cutoff = _months_before(current_start, window_months)
 
     out: Set[str] = set()
     for label, payload in weeks.items():
-        parsed = _parse_week_label(label)
-        if not parsed:
+        start = _period_start(label)
+        if start is None:
             continue
-        wy, ww = parsed
-        try:
-            monday = _week_monday(wy, ww)
-        except ValueError:
+        if start < cutoff:
             continue
-        if monday < cutoff:
-            continue
-        if monday > current_monday:
+        if start > current_start:
             continue
         urls = payload.get("primary_urls") if isinstance(payload, dict) else None
         if not urls:
@@ -119,31 +146,25 @@ def record_week(
     path: Path,
     week_label: str,
     primary_urls: List[str],
-    prune_older_than_weeks: int | None = None,
+    prune_older_than_months: int | None = None,
 ) -> None:
-    """Append or replace entry for week_label; optionally prune old week keys."""
+    """Append or replace entry for period label; optionally prune old period keys."""
     data = load_usage_file(path)
     weeks: Dict[str, Any] = dict(data["weeks"])
     canon = [canonical_url(u) for u in primary_urls if u and u.strip()]
     weeks[week_label] = {"primary_urls": canon}
 
-    if prune_older_than_weeks is not None and prune_older_than_weeks > 0:
-        y, w, _ = datetime.now(timezone.utc).isocalendar()
-        current_monday = _week_monday(y, w)
-        cutoff = current_monday - timedelta(weeks=prune_older_than_weeks + 4)
+    if prune_older_than_months is not None and prune_older_than_months > 0:
+        now = datetime.now(timezone.utc)
+        current_start = _month_start(now.year, now.month)
+        cutoff = _months_before(current_start, prune_older_than_months + 4)
         keep: Dict[str, Any] = {}
         for label, payload in weeks.items():
-            parsed = _parse_week_label(label)
-            if not parsed:
+            start = _period_start(label)
+            if start is None:
                 keep[label] = payload
                 continue
-            wy, ww = parsed
-            try:
-                monday = _week_monday(wy, ww)
-            except ValueError:
-                keep[label] = payload
-                continue
-            if monday >= cutoff:
+            if start >= cutoff:
                 keep[label] = payload
         weeks = keep
 
@@ -158,7 +179,7 @@ def maybe_record_weekly_usage(
     week_label: str,
     max_topics: int,
 ) -> None:
-    """Persist primary URLs for this week unless disabled or dry-run."""
+    """Persist primary URLs for this period unless disabled or dry-run."""
     if not cfg.usage_history_enabled or cfg.dry_run:
         return
     if not top:
@@ -173,5 +194,5 @@ def maybe_record_weekly_usage(
         cfg.usage_history_path,
         week_label,
         urls,
-        prune_older_than_weeks=cfg.usage_history_weeks + 8,
+        prune_older_than_months=cfg.usage_history_months + 8,
     )

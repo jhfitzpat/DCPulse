@@ -1,13 +1,13 @@
-# Weekly DC Pulse digest: collect RSS, cluster/rank topics, optional OpenAI narrative, email.
-# Manual run: Actions tab -> Weekly DC Pulse -> Run workflow.
-name: Weekly DC Pulse
+# Monthly DC Pulse digest: collect RSS, cluster/rank topics, optional OpenAI narrative, email.
+# Manual run: Actions tab -> Monthly DC Pulse -> Run workflow.
+name: Monthly DC Pulse
 
 on:
-  # Scheduled runs moved to Debian VM (cron/systemd). Manual run only here.
+  # Scheduled runs on Debian VM (cron/systemd). Manual run only here.
   workflow_dispatch: {}
 
 concurrency:
-  group: dc-pulse-weekly
+  group: dc-pulse-monthly
   cancel-in-progress: false
 
 jobs:

@@ -25,9 +25,9 @@ log = logging.getLogger(__name__)
 
 
 def week_label(now: Optional[datetime] = None) -> str:
+    """Return the digest period label (YYYY-MM for monthly runs)."""
     now = now or datetime.now(timezone.utc)
-    y, w, _ = now.isocalendar()
-    return f"{y}-W{w:02d}"
+    return f"{now.year}-{now.month:02d}"
 
 
 def _load_text(path: Path) -> str:
@@ -106,7 +106,7 @@ def build_user_message(
     week_label: str,
 ) -> str:
     schema_hint = {
-        "week_label": "string (use the provided week label)",
+        "week_label": "string (use the provided period label, YYYY-MM)",
         "intro": "string, optional 2-3 sentences",
         "topics": [
             {

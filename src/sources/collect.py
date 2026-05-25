@@ -15,7 +15,7 @@ from src.sources.catalog import SourceEntry
 
 log = logging.getLogger(__name__)
 
-USER_AGENT = "DCPulseWeekly/0.1 (+https://github.com)"
+USER_AGENT = "DCPulseMonthly/0.1 (+https://github.com)"
 
 
 @dataclass

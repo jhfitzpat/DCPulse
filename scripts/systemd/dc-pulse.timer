@@ -1,8 +1,8 @@
 [Unit]
-Description=Run DC Pulse weekly (Monday 12:00 UTC, matches former GitHub Actions schedule)
+Description=Run DC Pulse monthly (1st of month 12:00 UTC)
 
 [Timer]
-OnCalendar=Mon *-*-* 12:00:00 UTC
+OnCalendar=*-*-01 12:00:00 UTC
 Persistent=true
 Unit=dc-pulse.service
 

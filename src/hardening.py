@@ -1,4 +1,4 @@
-"""Coverage and quality guardrails for weekly digest output."""
+"""Coverage and quality guardrails for monthly digest output."""
 
 from __future__ import annotations
 

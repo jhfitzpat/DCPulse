@@ -23,7 +23,7 @@ DCPulse/
 │   ├── config.py            # Config dataclass + load_config()
 │   ├── hardening.py         # Low-confidence augmentation
 │   ├── llm/
-│   │   ├── generate_digest.py   # Weekly digest JSON via OpenAI
+│   │   ├── generate_digest.py   # Monthly digest JSON via OpenAI
 │   │   └── article_drafts.py    # Long-form drafts from digest
 │   ├── output/
 │   │   ├── schema.py        # Pydantic: WeeklyDigest, TopicDigest, etc.
@@ -48,9 +48,9 @@ DCPulse/
 ├── data/
 │   ├── sources.yml          # Feed catalog
 │   ├── topic_exclusions.yml # Keyword / topic filters
-│   └── weekly_usage.json    # Featured primary URLs (week-to-week uniqueness)
+│   └── weekly_usage.json    # Featured primary URLs (month-to-month uniqueness)
 ├── tests/                   # pytest
-├── scripts/                 # setup-vm.sh, run-weekly.sh, systemd, deploy-update.ps1 / .sh
+├── scripts/                 # setup-vm.sh, run-monthly.sh, systemd, deploy-update.ps1 / .sh
 ├── .github/workflows/       # Manual workflow; VM is primary scheduler
 ├── .cursor/rules/           # Cursor project rules (*.mdc)
 ├── pyproject.toml

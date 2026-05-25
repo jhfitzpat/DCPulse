@@ -4,13 +4,13 @@ from src.output.schema import ArticleDraft, WeeklyDigest
 
 
 def test_weekly_digest_article_drafts_default():
-    d = WeeklyDigest(week_label="2026-W01")
+    d = WeeklyDigest(week_label="2026-05")
     assert d.article_drafts == []
 
 
 def test_article_draft_roundtrip():
     d = WeeklyDigest(
-        week_label="2026-W01",
+        week_label="2026-05",
         article_drafts=[
             ArticleDraft(
                 topic_title="Test",

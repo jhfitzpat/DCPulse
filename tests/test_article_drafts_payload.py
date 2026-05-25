@@ -34,7 +34,7 @@ def _cfg(tmp_path: Path) -> Config:
         smtp_password=None,
         smtp_use_tls=True,
         smtp_use_ssl=False,
-        email_subject_prefix="DC Pulse Weekly",
+        email_subject_prefix="DC Pulse Monthly",
         web_search_enabled=False,
         web_search_responses_model="gpt-4o",
         search_planner_model="gpt-4o-mini",
@@ -48,7 +48,7 @@ def _cfg(tmp_path: Path) -> Config:
         article_draft_timeout_seconds=300.0,
         article_draft_model="gpt-4o-mini",
         usage_history_enabled=True,
-        usage_history_weeks=12,
+        usage_history_months=12,
         usage_history_path=data_dir / "weekly_usage.json",
         data_dir=data_dir,
         sources_path=data_dir / "sources.yml",
@@ -87,7 +87,7 @@ def test_article_draft_payload_includes_citations_and_supporting_articles(tmp_pa
         _scored_cluster("c2", "Second cluster", "https://example.com/second"),
     ]
     digest = WeeklyDigest(
-        week_label="2026-W14",
+        week_label="2026-05",
         topics=[
             TopicDigest(
                 rank=2,

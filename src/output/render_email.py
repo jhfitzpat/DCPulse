@@ -1,4 +1,4 @@
-"""Render weekly digest to HTML and plain text; optional SMTP send."""
+"""Render monthly digest to HTML and plain text; optional SMTP send."""
 
 from __future__ import annotations
 
@@ -27,7 +27,7 @@ def parse_recipient_list(raw: str) -> List[str]:
 
 def render_text(d: WeeklyDigest) -> str:
     lines: List[str] = [
-        f"DC Pulse Weekly — {d.week_label}",
+        f"DC Pulse Monthly — {d.week_label}",
         "",
         d.intro or "",
         "",
@@ -65,7 +65,7 @@ def render_text(d: WeeklyDigest) -> str:
         lines.append("  Angle B:")
         lines.append(f"  {h.repost_copy_angle_b}")
         lines.append("")
-    lines.append("Best to repost this week:")
+    lines.append("Best to repost this month:")
     for x in d.best_repost_this_week:
         lines.append(f"  - {x}")
     lines.append("")
@@ -87,7 +87,7 @@ def render_text(d: WeeklyDigest) -> str:
             lines.append(f"--- Draft {i}: {ad.draft_title} ---")
             lines.append(f"Topic: {ad.topic_title}")
             if ad.selection_rationale:
-                lines.append(f"Why this week: {ad.selection_rationale}")
+                lines.append(f"Why this month: {ad.selection_rationale}")
             lines.append("")
             lines.append(ad.body_markdown)
             lines.append("")
@@ -96,12 +96,12 @@ def render_text(d: WeeklyDigest) -> str:
 
 def render_html(d: WeeklyDigest) -> str:
     parts: List[str] = [
-        "<!DOCTYPE html><html><head><meta charset='utf-8'><title>DC Pulse Weekly</title>",
+        "<!DOCTYPE html><html><head><meta charset='utf-8'><title>DC Pulse Monthly</title>",
         "<style>body{font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif;line-height:1.45;color:#222;}",
         "h1{font-size:20px;} h2{font-size:16px;margin-top:1.2em;} .muted{color:#555;font-size:13px;}",
         "ul{padding-left:1.2em;} .card{border:1px solid #ddd;border-radius:8px;padding:12px;margin:10px 0;}",
         "</style></head><body>",
-        f"<h1>DC Pulse Weekly — {escape(d.week_label)}</h1>",
+        f"<h1>DC Pulse Monthly — {escape(d.week_label)}</h1>",
     ]
     if d.intro:
         parts.append(f"<p>{escape(d.intro)}</p>")
@@ -140,7 +140,7 @@ def render_html(d: WeeklyDigest) -> str:
         parts.append("<p><em>Angle A</em></p><p>" + escape(h.repost_copy_angle_a) + "</p>")
         parts.append("<p><em>Angle B</em></p><p>" + escape(h.repost_copy_angle_b) + "</p>")
         parts.append("</div>")
-    parts.append("<h2>Best to repost this week</h2><ul>")
+    parts.append("<h2>Best to repost this month</h2><ul>")
     for x in d.best_repost_this_week:
         parts.append(f"<li>{escape(x)}</li>")
     parts.append("</ul><h2>Thought leadership (month)</h2><ul>")
@@ -162,7 +162,7 @@ def render_html(d: WeeklyDigest) -> str:
             parts.append(f"<h3>{escape(ad.draft_title)}</h3>")
             parts.append(f"<p class='muted'><em>Topic:</em> {escape(ad.topic_title)}</p>")
             if ad.selection_rationale:
-                parts.append(f"<p class='muted'><em>Why this week:</em> {escape(ad.selection_rationale)}</p>")
+                parts.append(f"<p class='muted'><em>Why this month:</em> {escape(ad.selection_rationale)}</p>")
             parts.append(_draft_body_html(ad.body_markdown))
             parts.append("</section>")
     parts.append("</body></html>")

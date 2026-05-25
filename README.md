@@ -1,6 +1,6 @@
-# DC Pulse Weekly Pipeline
+# DC Pulse Monthly Pipeline
 
-Automated weekly workflow that collects Canadian pension and benefits coverage from curated RSS feeds ([`data/sources.yml`](data/sources.yml)), optionally augments discovery with **LLM-planned web search** (OpenAI Responses API with the built-in `web_search` tool), clusters and ranks to **7** topics, runs a **deep-research** LLM pass on those topics, then (by default) generates **two full-length article drafts** for review. The email includes the digest (7 topics, **3** repost highlights with **two** copy angles each), plus those drafts.
+Automated monthly workflow that collects Canadian pension and benefits coverage from curated RSS feeds ([`data/sources.yml`](data/sources.yml)), optionally augments discovery with **LLM-planned web search** (OpenAI Responses API with the built-in `web_search` tool), clusters and ranks to **7** topics, runs a **deep-research** LLM pass on those topics, then (by default) generates **two full-length article drafts** for review. The email includes the digest (7 topics, **3** repost highlights with **two** copy angles each), plus those drafts.
 
 Manual posting to LinkedIn stays **out of scope**; drafts are **for review** in the email, not auto-published.
 
@@ -34,13 +34,13 @@ Put your key in either place (the app loads the repo-root **`.env`** automatical
 
 ## Production: Debian VM (scheduled runs)
 
-The weekly digest runs on a **Debian VM** (e.g. Proxmox) via **cron** or **systemd timer**, not on a fixed GitHub schedule.
+The monthly digest runs on a **Debian VM** (e.g. Proxmox) via **cron** or **systemd timer**, not on a fixed GitHub schedule.
 
 1. **Cursor / SSH**: Connect with Remote-SSH and open the folder on the VM where the repo will live (or clone there in the integrated terminal).
 2. **Bootstrap**: from the repo on the VM (or pass clone URL):
 
    ```bash
-   chmod +x scripts/setup-vm.sh scripts/run-weekly.sh
+   chmod +x scripts/setup-vm.sh scripts/run-monthly.sh
    ./scripts/setup-vm.sh git@github.com:YOUR_ORG/DCPulse.git ~/DCPulse
    # or, if the repo is already cloned: ./scripts/setup-vm.sh "" ~/DCPulse
    ```
@@ -67,18 +67,18 @@ The weekly digest runs on a **Debian VM** (e.g. Proxmox) via **cron** or **syste
 
 5. **Schedule** (pick one):
 
-   **Cron (Monday 08:00 America/Los_Angeles — example)**
+   **Cron (1st of month 08:00 America/Los_Angeles — example)**
 
    ```cron
    CRON_TZ=America/Los_Angeles
-   0 8 * * 1 /home/YOU/DCPulse/scripts/run-weekly.sh
+   0 8 1 * * /home/YOU/DCPulse/scripts/run-monthly.sh
    ```
 
-   **Cron (Monday 12:00 UTC — legacy Actions-style)**
+   **Cron (1st of month 12:00 UTC — legacy Actions-style)**
 
    ```cron
    CRON_TZ=UTC
-   0 12 * * 1 /home/YOU/DCPulse/scripts/run-weekly.sh
+   0 12 1 * * /home/YOU/DCPulse/scripts/run-monthly.sh
    ```
 
    **Systemd** (edit `User=` and paths in the unit files, then install):
@@ -95,15 +95,15 @@ The weekly digest runs on a **Debian VM** (e.g. Proxmox) via **cron** or **syste
 
    If `OnCalendar=... UTC` is not supported by your systemd version, use cron with `CRON_TZ=UTC` or set the VM timezone and adjust the calendar.
 
-   **Cron requires an executable script:** `scripts/run-weekly.sh` must be mode `755` (or otherwise executable). Without `+x`, cron will not run it and no log file is created. [`scripts/setup-vm.sh`](scripts/setup-vm.sh) and deploy scripts run `chmod +x scripts/*.sh`; the repo stores `run-weekly.sh` as executable in git.
+   **Cron requires an executable script:** `scripts/run-monthly.sh` must be mode `755` (or otherwise executable). Without `+x`, cron will not run it and no log file is created. [`scripts/setup-vm.sh`](scripts/setup-vm.sh) and deploy scripts run `chmod +x scripts/*.sh`; the repo stores `run-monthly.sh` as executable in git. `run-weekly.sh` remains as a deprecated wrapper.
 
-6. **Logs and digest archive**: [`scripts/run-weekly.sh`](scripts/run-weekly.sh) appends to `logs/dc-pulse.log` and copies `last_digest.txt` to `archive/YYYY-MM-DD.txt`. Override with `DC_PULSE_LOG_DIR`, `DC_PULSE_ARCHIVE_DIR`, or `DC_PULSE_LOG_FILE` if needed.
+6. **Logs and digest archive**: [`scripts/run-monthly.sh`](scripts/run-monthly.sh) appends to `logs/dc-pulse.log` and copies `last_digest.txt` to `archive/YYYY-MM-DD.txt`. Override with `DC_PULSE_LOG_DIR`, `DC_PULSE_ARCHIVE_DIR`, or `DC_PULSE_LOG_FILE` if needed.
 
 ### Email troubleshooting
 
 - **`DC_PULSE_DRY_RUN`:** only `1`, `true`, `yes`, and `on` (case-insensitive) enable dry-run. **`0` does not** enable dry-run; email is allowed when SMTP and recipients are set.
 - **Port 587 vs 465:** port **587** uses STARTTLS (`DC_PULSE_SMTP_TLS=1`). Port **465** uses implicit SSL (`SMTP_SSL`); the app defaults to SSL when the port is 465 unless `DC_PULSE_SMTP_SSL=0`.
-- **Logs:** a successful send logs `Email sent successfully`; failures log `SMTP send failed` with a traceback. Cron output goes to `logs/dc-pulse.log` when using `run-weekly.sh`.
+- **Logs:** a successful send logs `Email sent successfully`; failures log `SMTP send failed` with a traceback. Cron output goes to `logs/dc-pulse.log` when using `run-monthly.sh`.
 
 ### Manual deploy from your PC to the VM
 
@@ -134,10 +134,10 @@ After editing prompts, `data/`, `src/`, or `requirements.txt`, refresh the VM wi
 
 ## GitHub Actions (optional manual run only)
 
-Workflow: [`.github/workflows/weekly-dc-pulse.yml`](.github/workflows/weekly-dc-pulse.yml)
+Workflow: [`.github/workflows/monthly-dc-pulse.yml`](.github/workflows/monthly-dc-pulse.yml)
 
 - **Schedule**: disabled; production runs on the Debian VM.
-- **Manual run**: Actions → Weekly DC Pulse → Run workflow (uses repository secrets).
+- **Manual run**: Actions → Monthly DC Pulse → Run workflow (uses repository secrets).
 
 ### Repository secrets (manual workflow / reference for `.env`)
 
@@ -161,10 +161,10 @@ If email secrets are missing, the job still runs and writes `last_digest.txt`; d
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `DC_PULSE_DRY_RUN` | unset / `0` | `1`/`true`/`yes`/`on` = no email send. Plain `0` is not dry-run. |
-| `DC_PULSE_USAGE_HISTORY` | `1` | `0` = do not track or block repeat primary URLs across weeks. |
-| `DC_PULSE_USAGE_HISTORY_WEEKS` | `12` | Rolling window (ISO weeks) for blocked primary URLs. |
+| `DC_PULSE_USAGE_HISTORY` | `1` | `0` = do not track or block repeat primary URLs across months. |
+| `DC_PULSE_USAGE_HISTORY_MONTHS` | `12` | Rolling window (calendar months) for blocked primary URLs. |
 | `DC_PULSE_LOG_LEVEL` | `INFO` | Logging level. |
-| `DC_PULSE_LOOKBACK_DAYS` | `14` | RSS item lookback. |
+| `DC_PULSE_LOOKBACK_DAYS` | `30` | RSS item lookback. |
 | `DC_PULSE_MAX_TOPICS` | `7` | Max ranked topics. |
 | `DC_PULSE_HIGHLIGHT_REPOST` | `3` | Repost highlights. |
 | `DC_PULSE_SKIP_LLM` | `0` | `1` = force fallback digest. |
@@ -202,7 +202,7 @@ Verify feed URLs periodically; some publishers change RSS endpoints.
 
 1. **Collect** RSS from `sources.yml`; optionally **web search** (planner in [`src/prompts/web_search_planner.md`](src/prompts/web_search_planner.md)—including a **mandatory TELUS** pension/benefits query when web search is on—plus OpenAI Responses API with `web_search` tool) merged as additional articles before lookback.
 2. **Normalize** / dedupe → **cluster** (token overlap) → **rank** → select **top 7** + **3** repost highlights.
-3. **Deep research LLM** ([`src/prompts/deep_research_seven.md`](src/prompts/deep_research_seven.md)) produces the weekly digest JSON; repost URLs are grounded in cluster articles.
+3. **Deep research LLM** ([`src/prompts/deep_research_seven.md`](src/prompts/deep_research_seven.md)) produces the monthly digest JSON; repost URLs are grounded in cluster articles.
 4. **Article drafts LLM** selects two topics for long-form posts and generates Markdown drafts ([`src/prompts/article_drafts.md`](src/prompts/article_drafts.md)); configurable via `DC_PULSE_ARTICLE_DRAFTS` / `DC_PULSE_ARTICLE_DRAFT_COUNT`.
 5. Render HTML + plain text (digest + drafts); send via SMTP.
 

@@ -1,5 +1,5 @@
 [Unit]
-Description=DC Pulse weekly digest pipeline
+Description=DC Pulse monthly digest pipeline
 After=network-online.target
 Wants=network-online.target
 
@@ -8,7 +8,7 @@ Type=oneshot
 User=CHANGE_ME
 WorkingDirectory=CHANGE_ME_REPO_ROOT
 EnvironmentFile=CHANGE_ME_REPO_ROOT/.env
-ExecStart=/bin/bash CHANGE_ME_REPO_ROOT/scripts/run-weekly.sh
+ExecStart=/bin/bash CHANGE_ME_REPO_ROOT/scripts/run-monthly.sh
 StandardOutput=journal
 StandardError=journal
 

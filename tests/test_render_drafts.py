@@ -6,7 +6,7 @@ from src.output.schema import ArticleDraft, WeeklyDigest
 
 def _minimal_digest() -> WeeklyDigest:
     return WeeklyDigest(
-        week_label="2026-W01",
+        week_label="2026-05",
         intro="Intro",
         topics=[],
         repost_highlights=[],

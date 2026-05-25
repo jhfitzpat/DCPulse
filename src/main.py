@@ -1,4 +1,4 @@
-"""DC Pulse weekly pipeline entrypoint."""
+"""DC Pulse monthly pipeline entrypoint."""
 
 from __future__ import annotations
 
@@ -46,7 +46,7 @@ def _finalize_digest(
     raw_count: int,
     cluster_count: int,
 ) -> WeeklyDigest:
-    """Apply low-confidence augmentation and persist weekly primary URL usage."""
+    """Apply low-confidence augmentation and persist monthly primary URL usage."""
     out = augment_low_confidence(digest, cfg, raw_count, cluster_count)
     maybe_record_weekly_usage(cfg, top, out.week_label, cfg.max_topics)
     return out
@@ -114,8 +114,12 @@ def run_pipeline() -> WeeklyDigest:
     ranked = rank_clusters(clusters, rules)
     if cfg.usage_history_enabled:
         hist = load_usage_file(cfg.usage_history_path)
-        blocked = blocked_urls_in_window(hist["weeks"], window_weeks=cfg.usage_history_weeks)
-        log.info("Usage history: %d blocked primary URLs (last %d weeks)", len(blocked), cfg.usage_history_weeks)
+        blocked = blocked_urls_in_window(hist["weeks"], window_months=cfg.usage_history_months)
+        log.info(
+            "Usage history: %d blocked primary URLs (last %d months)",
+            len(blocked),
+            cfg.usage_history_months,
+        )
     else:
         blocked = set()
     top, highlights = select_top_topics(
@@ -157,7 +161,7 @@ def run_pipeline() -> WeeklyDigest:
         digest = digest.model_copy(
             update={
                 "low_confidence_note": (
-                    "Fewer than 7 strong topics this week or thin coverage; "
+                    "Fewer than 7 strong topics this month or thin coverage; "
                     "review citations before relying on narratives."
                 )
             }
@@ -166,7 +170,7 @@ def run_pipeline() -> WeeklyDigest:
 
 
 def main() -> int:
-    p = argparse.ArgumentParser(description="DC Pulse weekly digest pipeline")
+    p = argparse.ArgumentParser(description="DC Pulse monthly digest pipeline")
     p.add_argument(
         "--dry-run",
         action="store_true",

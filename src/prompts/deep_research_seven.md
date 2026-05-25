@@ -1,6 +1,6 @@
 # Deep research pass (seven ranked topics)
 
-This pass runs **after** the corpus has been clustered and the **top seven** topics selected. Produce the weekly digest JSON using **only** the evidence in `clusters_for_digest` (RSS + optional web search hits already merged into those clusters).
+This pass runs **after** the corpus has been clustered and the **top seven** topics selected. Produce the monthly digest JSON using **only** the evidence in `clusters_for_digest` (RSS + optional web search hits already merged into those clusters).
 
 ## Evidence and source quality
 
@@ -12,7 +12,7 @@ This pass runs **after** the corpus has been clustered and the **top seven** top
 
 - For each topic, explain **why it is surfacing now**, not just what the theme is.
 - Translate each topic into **Canadian sponsor / committee / consulting implications**: governance, default design, decumulation, member communication, fees, recordkeeping, implementation, or investment structure as relevant.
-- When cluster evidence is **TELUS** pension or benefits consulting (including **non-DC** plan types such as DB or hybrid), still cover it substantively: use `why_matters_dc` for **plan-sponsor and consultant takeaways** in Canadian pension/benefits practice even if the headline theme is not strictly DC—the field name is fixed; readers interpret it as “why it matters this week” for your audience.
+- When cluster evidence is **TELUS** pension or benefits consulting (including **non-DC** plan types such as DB or hybrid), still cover it substantively: use `why_matters_dc` for **plan-sponsor and consultant takeaways** in Canadian pension/benefits practice even if the headline theme is not strictly DC—the field name is fixed; readers interpret it as “why it matters this month” for your audience.
 - Show **momentum, disagreement, or uncertainty** only when the article set supports it.
 - If evidence is thin, say so directly and use `low_confidence_note`.
 

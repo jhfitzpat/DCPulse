@@ -77,7 +77,7 @@ class ArticleDraft(BaseModel):
 class WeeklyDigest(BaseModel):
     """Full weekly email payload."""
 
-    week_label: str = Field(..., description="e.g. 2026-W14")
+    week_label: str = Field(..., description="Digest period label, e.g. 2026-05")
     intro: str = Field(default="", description="Optional one-paragraph intro")
     topics: List[TopicDigest] = Field(default_factory=list, max_length=7)
     repost_highlights: List[RepostHighlight] = Field(default_factory=list, max_length=3)
